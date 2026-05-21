@@ -1,0 +1,15 @@
+@import "tailwindcss";
+
+@layer base {
+  body {
+    @apply bg-[#0F1117] text-white font-sans antialiased;
+  }
+}
+
+.exam-palette-gray { background-color: #6B7280; } /* Not visited */
+.exam-palette-red { background-color: #EF4444; } /* Visited, not answered */
+.exam-palette-green { background-color: #10B981; } /* Answered */
+.exam-palette-purple { background-color: #8B5CF6; } /* Marked for review */
+.exam-palette-purple-green { 
+  background: linear-gradient(135deg, #8B5CF6 50%, #10B981 50%);
+} /* Answered & Marked for review */

@@ -1,0 +1,29 @@
+# Node modules
+node_modules/
+
+# Python Virtual Environments
+venv/
+env/
+__pycache__/
+*.pyc
+
+# Environment Variables (CRITICAL!)
+.env
+.env.local
+.env.development
+.env.production
+
+# Build output
+frontend/dist/
+backend-pdf/build/
+backend-pdf/dist/
+
+# Uploads and temporary files
+backend/uploads/
+backend-pdf/uploads/
+*.pdf
+*.log
+
+# OS generated files
+.DS_Store
+Thumbs.db

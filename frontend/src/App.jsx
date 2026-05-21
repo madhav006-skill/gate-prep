@@ -1,0 +1,65 @@
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { useAuthStore } from './store/authStore';
+import { useEffect } from 'react';
+import ExamLayout from './pages/ExamLayout';
+import ResultLayout from './pages/ResultLayout';
+import Landing from './pages/Landing';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import Dashboard from './pages/Dashboard';
+import Analytics from './pages/Analytics';
+import AdminPanel from './pages/AdminPanel';
+import PdfImporter from './pages/admin/PdfImporter';
+import TestList from './pages/TestList';
+
+// Simple Protected Route wrapper
+const ProtectedRoute = ({ children, adminOnly }) => {
+  const { isAuthenticated, user } = useAuthStore();
+  
+  if (!isAuthenticated) return <Navigate to="/login" />;
+  if (adminOnly && user?.role !== 'admin') return <Navigate to="/dashboard" />;
+  
+  return children;
+};
+
+function App() {
+  const { fetchUser } = useAuthStore();
+
+  useEffect(() => {
+    fetchUser();
+  }, [fetchUser]);
+
+  return (
+    <div className="min-h-screen bg-[#0F1117]">
+      <Routes>
+        <Route path="/" element={<Landing />} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={
+          <ProtectedRoute>
+            <Dashboard />
+          </ProtectedRoute>
+        } />
+        <Route path="/analytics" element={
+          <ProtectedRoute>
+            <Analytics />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin" element={
+          <ProtectedRoute adminOnly>
+            <PdfImporter />
+          </ProtectedRoute>
+        } />
+        <Route path="/tests" element={
+          <ProtectedRoute>
+            <TestList />
+          </ProtectedRoute>
+        } />
+        <Route path="/exam/:testId" element={<ExamLayout />} />
+        <Route path="/result/:attemptId" element={<ResultLayout />} />
+      </Routes>
+    </div>
+  );
+}
+
+export default App;
