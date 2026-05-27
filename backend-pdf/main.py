@@ -10,12 +10,19 @@ from typing import Dict
 
 app = FastAPI(title="PDF to Question Import System OCR API")
 
+ALLOWED_ORIGINS = [
+    "https://gate-prep-backend.onrender.com",
+    "https://frontend-murex-two-47.vercel.app",
+    "http://localhost:5000",
+    "http://localhost:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=ALLOWED_ORIGINS,
+    allow_credentials=False,
+    allow_methods=["POST", "GET"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 # In-memory dictionary to track job statuses
@@ -29,16 +36,23 @@ class JobResponse(BaseModel):
     job_id: str
     status: str
 
+MAX_FILE_SIZE_MB = 10
+
 @app.post("/api/pdf/upload", response_model=JobResponse)
 async def upload_pdf(background_tasks: BackgroundTasks, file: UploadFile = File(...)):
-    if not file.filename.endswith(".pdf"):
+    if not file.filename.lower().endswith(".pdf"):
         raise HTTPException(status_code=400, detail="Only PDF files are allowed")
+    
+    # Read content and check file size
+    content = await file.read()
+    if len(content) > MAX_FILE_SIZE_MB * 1024 * 1024:
+        raise HTTPException(status_code=413, detail=f"File too large. Max size is {MAX_FILE_SIZE_MB}MB")
 
     job_id = str(uuid.uuid4())
     file_path = os.path.join(UPLOAD_DIR, f"{job_id}.pdf")
     
     with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+        buffer.write(content)
     
     jobs[job_id] = {
         "status": "processing",

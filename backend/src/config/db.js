@@ -10,6 +10,10 @@ const connectDB = async () => {
 
     // Use MongoMemoryServer if no URI is provided or if we force it
     if (!uri || uri.includes('<username>')) {
+      if (process.env.NODE_ENV === 'production') {
+        console.error('FATAL: MONGODB_URI is not set or invalid in production!');
+        process.exit(1);
+      }
       console.log('No valid MONGODB_URI provided. Starting in-memory MongoDB server...');
       mongoServer = await MongoMemoryServer.create();
       uri = mongoServer.getUri();

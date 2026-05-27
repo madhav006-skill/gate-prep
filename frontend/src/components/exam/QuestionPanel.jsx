@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import DOMPurify from 'dompurify';
 import { useExamStore } from '../../store/examStore';
 
 const QuestionPanel = () => {
@@ -75,7 +76,7 @@ const QuestionPanel = () => {
       {/* Question Content */}
       <div className="mb-6 text-lg">
         {question.questionHtml ? (
-          <div dangerouslySetInnerHTML={{ __html: question.questionHtml }} className="mathjax-content" />
+          <div dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(question.questionHtml, { USE_PROFILES: { html: true } }) }} className="mathjax-content" />
         ) : (
           <p className="whitespace-pre-wrap">{question.content}</p>
         )}

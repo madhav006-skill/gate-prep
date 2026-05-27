@@ -163,9 +163,27 @@ export const useExamStore = create((set, get) => ({
   },
 
   submitTest: async () => {
-    const { attemptId } = get();
+    const { attemptId, answers, questions } = get();
     set({ isLoading: true });
     try {
+      // CRITICAL: Sync ALL current answers to backend before submitting
+      // This catches NAT answers that may not have been saved (e.g., user didn't click Save & Next)
+      const syncPromises = questions.map(q => {
+        const data = answers[q._id];
+        if (!data) return Promise.resolve();
+        // Only sync if answered (don't waste calls for Not Visited/Not Answered with null)
+        if (data.answer === null && data.status === 'Not Visited') return Promise.resolve();
+        return api.post(`/tests/attempts/${attemptId}/save-answer`, {
+          questionId: q._id,
+          answer: data.answer,
+          status: data.status,
+          timeSpent: data.timeSpent || 0
+        }).catch(err => console.warn(`Failed to sync answer for ${q._id}:`, err.message));
+      });
+      
+      await Promise.allSettled(syncPromises);
+      
+      // Now submit
       await api.post(`/tests/attempts/${attemptId}/submit`);
       set({ isSubmitted: true, isLoading: false });
     } catch (error) {

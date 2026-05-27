@@ -1,10 +1,19 @@
+const jwt = require('jsonwebtoken');
 const ErrorResponse = require('../utils/errorResponse');
 const User = require('../models/User');
 
+// Ensure JWT_SECRET is set
+if (!process.env.JWT_SECRET) {
+  if (process.env.NODE_ENV === 'production') {
+    console.error('FATAL: JWT_SECRET is not set in production!');
+    process.exit(1);
+  }
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_fallback_secret_only';
+
 // Get token from model, create cookie and send response
 const sendTokenResponse = (user, statusCode, res) => {
-  // Create token
-  const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback_secret_for_development_only', {
+  const token = jwt.sign({ id: user._id }, JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRE || '30d'
   });
 
@@ -26,7 +35,6 @@ const sendTokenResponse = (user, statusCode, res) => {
     });
 };
 
-const jwt = require('jsonwebtoken');
 
 // @desc    Register user
 // @route   POST /api/auth/register

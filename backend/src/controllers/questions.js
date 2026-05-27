@@ -22,8 +22,12 @@ exports.getQuestions = async (req, res, next) => {
     // Create operators ($gt, $gte, etc)
     queryStr = queryStr.replace(/\b(gt|gte|lt|lte|in)\b/g, match => `$${match}`);
 
-    // Finding resource
+    // Finding resource - exclude sensitive fields for public access
+    const isAdmin = req.user && req.user.role === 'admin';
     query = Question.find(JSON.parse(queryStr));
+    if (!isAdmin) {
+      query = query.select('-correctAnswer -explanation -solution');
+    }
 
     // Select Fields
     if (req.query.select) {
@@ -84,7 +88,9 @@ exports.getQuestions = async (req, res, next) => {
 // @access  Public
 exports.getQuestion = async (req, res, next) => {
   try {
-    const question = await Question.findById(req.params.id);
+    const isAdmin = req.user && req.user.role === 'admin';
+    const question = await Question.findById(req.params.id)
+      .select(isAdmin ? '' : '-correctAnswer -explanation -solution');
 
     if (!question) {
       return next(new Error(`Question not found with id of ${req.params.id}`));

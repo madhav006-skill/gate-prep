@@ -23,7 +23,7 @@ exports.protect = async (req, res, next) => {
 
   try {
     // Verify token
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret_for_development_only');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_fallback_secret_only');
 
     req.user = await User.findById(decoded.id);
     
@@ -48,4 +48,22 @@ exports.authorize = (...roles) => {
     }
     next();
   };
+};
+
+// Optional protect - sets req.user if token present but doesn't block if missing
+exports.optionalProtect = async (req, res, next) => {
+  let token;
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.cookies && req.cookies.token) {
+    token = req.cookies.token;
+  }
+  if (!token) return next();
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'dev_fallback_secret_only');
+    req.user = await User.findById(decoded.id);
+  } catch (err) {
+    // Invalid token - just ignore, treat as guest
+  }
+  next();
 };

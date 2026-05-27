@@ -16,6 +16,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.3.0",
     "axios": "^1.16.1",
+    "dompurify": "^3.4.6",
     "framer-motion": "^12.39.0",
     "katex": "^0.16.47",
     "lucide-react": "^1.16.0",
