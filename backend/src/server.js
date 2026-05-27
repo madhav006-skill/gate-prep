@@ -27,8 +27,21 @@ if (process.env.NODE_ENV === 'development') {
 app.use(helmet());
 
 // Enable CORS
+const allowedOrigins = [
+  'http://localhost:5173', 
+  'https://frontend-murex-two-47.vercel.app', 
+  'https://frontend-91f72lha9-aman-kumars-projects-b903351b.vercel.app',
+  process.env.CLIENT_URL
+].filter(Boolean);
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
   credentials: true
 }));
 
