@@ -12,6 +12,7 @@
     "seed": "node src/utils/seed.js"
   },
   "dependencies": {
+    "@google/genai": "^2.6.0",
     "axios": "^1.16.1",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.3",

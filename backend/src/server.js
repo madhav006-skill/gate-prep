@@ -56,6 +56,8 @@ const questions = require('./routes/questions');
 const tests = require('./routes/tests');
 const importRoute = require('./routes/import');
 const uploadRoute = require('./routes/upload');
+const analytics = require('./routes/analytics');
+const revision = require('./routes/revision');
 
 // Mount routers
 app.use('/api/auth', auth);
@@ -63,6 +65,8 @@ app.use('/api/questions', questions);
 app.use('/api/tests', tests);
 app.use('/api/import', importRoute);
 app.use('/api/upload', uploadRoute);
+app.use('/api/analytics', analytics);
+app.use('/api/revision', revision);
 
 // Error handler middleware
 app.use(errorHandler);

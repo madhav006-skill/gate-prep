@@ -141,19 +141,24 @@ exports.submitTest = async (req, res, next) => {
     let correctCount = 0;
     let attemptedCount = 0;
     
-    // Calculate total time taken
     const timeTaken = (Date.now() - new Date(attempt.startTime).getTime()) / 1000;
     attempt.timeTaken = timeTaken;
     attempt.endTime = Date.now();
 
+    // Track per-topic wrong counts for "Repeated Topic Weakness" detection
+    const topicWrongMap = {};
+
     for (let ans of attempt.answers) {
-      if (ans.status.includes('Answered') && ans.answer !== undefined && ans.answer !== null) {
+      const question = await Question.findById(ans.question);
+      if (!question) continue;
+
+      const isAnswered = ans.status.includes('Answered') && ans.answer !== undefined && ans.answer !== null;
+      const isMarked = ans.status.includes('Marked for Review');
+
+      if (isAnswered) {
         attemptedCount++;
-        const question = await Question.findById(ans.question);
-        
         let isCorrect = false;
 
-        // Evaluation Logic based on Question Type
         if (question.type === 'MCQ') {
           isCorrect = String(ans.answer).toLowerCase() === String(question.correctAnswer).toLowerCase();
           if (isCorrect) {
@@ -161,31 +166,16 @@ exports.submitTest = async (req, res, next) => {
             score += question.marks;
             correctCount++;
           } else {
-            ans.marksAwarded = -(question.negativeMarks || (question.marks / 3)); // GATE standard negative
+            ans.marksAwarded = -(question.negativeMarks || (question.marks / 3));
             score += ans.marksAwarded;
-            
-            // Add to Revision Engine for mistakes
-            await RevisionQuestion.findOneAndUpdate(
-              { user: req.user.id, question: question._id },
-              { reason: 'Wrong', lastPracticed: Date.now(), $inc: { attempts: 1 } },
-              { upsert: true }
-            );
           }
         } else if (question.type === 'MSQ') {
-          // MSQ logic: Arrays must match exactly. No negative marking.
           const correctArr = Array.isArray(question.correctAnswer) ? question.correctAnswer.map(s => String(s).toLowerCase()).sort() : [String(question.correctAnswer).toLowerCase()];
           const userArr = Array.isArray(ans.answer) ? ans.answer.map(s => String(s).toLowerCase()).sort() : [String(ans.answer).toLowerCase()];
-          
           isCorrect = JSON.stringify(correctArr) === JSON.stringify(userArr);
-          if (isCorrect) {
-            ans.marksAwarded = question.marks;
-            score += question.marks;
-            correctCount++;
-          } else {
-            ans.marksAwarded = 0; // No negative marking in MSQ
-          }
+          ans.marksAwarded = isCorrect ? question.marks : 0;
+          if (isCorrect) { score += question.marks; correctCount++; }
         } else if (question.type === 'NAT') {
-          // NAT logic: Check if within range. No negative marking.
           const userVal = parseFloat(ans.answer);
           if (typeof question.correctAnswer === 'string' && question.correctAnswer.includes('-')) {
             const [min, max] = question.correctAnswer.split('-').map(parseFloat);
@@ -193,25 +183,113 @@ exports.submitTest = async (req, res, next) => {
           } else {
             isCorrect = userVal === parseFloat(question.correctAnswer);
           }
-
-          if (isCorrect) {
-            ans.marksAwarded = question.marks;
-            score += question.marks;
-            correctCount++;
-          } else {
-            ans.marksAwarded = 0;
-          }
+          ans.marksAwarded = isCorrect ? question.marks : 0;
+          if (isCorrect) { score += question.marks; correctCount++; }
         }
 
         ans.isCorrect = isCorrect;
+
+        // ── Revision auto-population ──────────────────────────────────────
+        const topicKey = `${question.subject}::${question.topic}`;
+
+        if (!isCorrect) {
+          // Track for repeated weakness detection
+          topicWrongMap[topicKey] = (topicWrongMap[topicKey] || 0) + 1;
+
+          const priority = question.difficulty === 'easy' ? 'High' : 'Medium';
+          await RevisionQuestion.findOneAndUpdate(
+            { user: req.user.id, question: question._id },
+            {
+              $set: {
+                reason: 'Wrong Answer',
+                priority,
+                subject: question.subject || 'General',
+                topic: question.topic || 'General',
+                questionType: question.type,
+                dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                status: 'Due',
+                nextIntervalDays: 1,
+                lastPracticed: null
+              },
+              $inc: { attempts: 1 }
+            },
+            { upsert: true }
+          ).catch(() => {});
+        } else if (isCorrect && ans.timeSpent > 180) {
+          // Slow but correct — only add if not already flagged as Wrong
+          await RevisionQuestion.findOneAndUpdate(
+            { user: req.user.id, question: question._id, reason: { $ne: 'Wrong Answer' } },
+            {
+              $set: {
+                reason: 'Slow but Correct',
+                priority: 'Medium',
+                subject: question.subject || 'General',
+                topic: question.topic || 'General',
+                questionType: question.type,
+                dueDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+                status: 'Upcoming',
+                nextIntervalDays: 2
+              },
+              $inc: { attempts: 1 }
+            },
+            { upsert: true }
+          ).catch(() => {});
+        }
+        // ─────────────────────────────────────────────────────────────────
+      } else {
+        // Not answered
+        // Marked for Review
+        if (isMarked) {
+          await RevisionQuestion.findOneAndUpdate(
+            { user: req.user.id, question: question._id, reason: { $nin: ['Wrong Answer', 'Slow but Correct'] } },
+            {
+              $set: {
+                reason: 'Marked for Review',
+                priority: 'Medium',
+                subject: question.subject || 'General',
+                topic: question.topic || 'General',
+                questionType: question.type,
+                dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                status: 'Due',
+                nextIntervalDays: 1
+              },
+              $inc: { attempts: 1 }
+            },
+            { upsert: true }
+          ).catch(() => {});
+        }
+
+        // Skipped Easy
+        if (!isMarked && question.difficulty === 'easy') {
+          await RevisionQuestion.findOneAndUpdate(
+            { user: req.user.id, question: question._id, reason: { $nin: ['Wrong Answer', 'Slow but Correct', 'Marked for Review'] } },
+            {
+              $set: {
+                reason: 'Skipped Easy',
+                priority: 'Medium',
+                subject: question.subject || 'General',
+                topic: question.topic || 'General',
+                questionType: question.type,
+                dueDate: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
+                status: 'Due',
+                nextIntervalDays: 1
+              },
+              $inc: { attempts: 1 }
+            },
+            { upsert: true }
+          ).catch(() => {});
+        }
       }
-      
-      // Track slow questions
-      if (ans.timeSpent > 180 && ans.isCorrect) { // If it took more than 3 minutes but was correct
-        await RevisionQuestion.findOneAndUpdate(
-          { user: req.user.id, question: ans.question, reason: { $ne: 'Wrong' } },
-          { reason: 'Slow', lastPracticed: Date.now(), $inc: { attempts: 1 } },
-          { upsert: true }
+    }
+
+    // Repeated Topic Weakness — topic with ≥3 wrong answers in this attempt
+    for (const [topicKey, count] of Object.entries(topicWrongMap)) {
+      if (count >= 3) {
+        const [subject, topic] = topicKey.split('::');
+        // Upgrade priority of all existing revision items in this topic
+        await RevisionQuestion.updateMany(
+          { user: req.user.id, subject, topic, status: { $ne: 'Completed' } },
+          { $set: { priority: 'High', reason: 'Repeated Topic Weakness', dueDate: new Date(), status: 'Due' } }
         );
       }
     }
@@ -227,6 +305,7 @@ exports.submitTest = async (req, res, next) => {
     next(error);
   }
 };
+
 
 // @desc    Get complete test result (with correct answers & explanations)
 // @route   GET /api/tests/attempts/:attemptId/result

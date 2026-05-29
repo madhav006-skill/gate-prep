@@ -47,21 +47,48 @@ const ImportPreview = ({ questions, onSave, onCancel }) => {
     setEditingIndex(null);
   };
 
-  const handleSubmit = () => {
+  const [isSaving, setIsSaving] = useState(false);
+  const [progressData, setProgressData] = useState(null);
+
+  const handleSubmit = async () => {
+    setIsSaving(true);
+    setProgressData({ percentage: 0 });
+    
+    const importJobId = Date.now().toString() + Math.floor(Math.random() * 1000);
+    
+    // Start polling for progress
+    const pollInterval = setInterval(async () => {
+      try {
+        const { data: res } = await api.get(`/import/save-progress/${importJobId}`);
+        if (res.success && res.data) {
+          setProgressData(res.data);
+        }
+      } catch (e) {
+        // ignore polling errors
+      }
+    }, 2000);
+
     const generatedTitle = `GATE ${testSubject} ${testYear} ${testShift}`;
     const approvedOnly = editableQuestions.filter(q => q.approved).map(q => {
       const { approved, id, ...rest } = q;
       return rest;
     });
     
-    // Pass metadata along with questions
-    onSave({
-      questions: approvedOnly,
-      title: generatedTitle,
-      description: testDesc,
-      subject: testSubject,
-      type: testType
-    });
+    try {
+      // Pass metadata along with questions
+      await onSave({
+        importJobId,
+        questions: approvedOnly,
+        title: generatedTitle,
+        description: testDesc,
+        subject: testSubject,
+        type: testType
+      });
+    } finally {
+      clearInterval(pollInterval);
+      setIsSaving(false);
+      setProgressData(null);
+    }
   };
 
   if (editingIndex !== null) {
@@ -82,11 +109,26 @@ const ImportPreview = ({ questions, onSave, onCancel }) => {
           <p className="text-gray-400">Review OCR results before saving. {editableQuestions.filter(q => q.approved).length} selected.</p>
         </div>
         <div className="flex space-x-4">
-          <button onClick={onCancel} className="px-6 py-2 rounded-lg font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 transition">
+          <button onClick={onCancel} disabled={isSaving} className="px-6 py-2 rounded-lg font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 transition disabled:opacity-50">
             Discard
           </button>
-          <button onClick={handleSubmit} className="px-6 py-2 rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-500 transition flex items-center">
-            <Save size={18} className="mr-2"/> Import Selected
+          <button 
+            onClick={handleSubmit} 
+            disabled={isSaving}
+            className="px-6 py-2 rounded-lg font-medium bg-emerald-600 text-white hover:bg-emerald-500 transition flex items-center disabled:opacity-50"
+          >
+            {isSaving ? (
+              <>
+                <div className="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full mr-2"></div>
+                {progressData && progressData.total > 0 
+                  ? `Classifying... (${progressData.percentage}%)` 
+                  : 'Saving & Classifying...'}
+              </>
+            ) : (
+              <>
+                <Save size={18} className="mr-2"/> Import Selected
+              </>
+            )}
           </button>
         </div>
       </div>

@@ -62,6 +62,50 @@ export const useAuthStore = create((set) => ({
     }
   },
 
+  forgotPassword: async (email) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.post('/auth/forgot-password', { email });
+      set({ isLoading: false });
+      return res.data;
+    } catch (error) {
+      set({ 
+        error: error.response?.data?.error || 'Failed to process request', 
+        isLoading: false 
+      });
+      return { success: false };
+    }
+  },
+
+  resetPassword: async (token, password) => {
+    set({ isLoading: true, error: null });
+    try {
+      const res = await api.put(`/auth/reset-password/${token}`, { password });
+      
+      // Auto login after reset
+      const { token: newAuthToken } = res.data;
+      localStorage.setItem('token', newAuthToken);
+      
+      const userRes = await api.get('/auth/me', {
+        headers: { Authorization: `Bearer ${newAuthToken}` }
+      });
+
+      set({ 
+        token: newAuthToken, 
+        isAuthenticated: true, 
+        user: userRes.data.data, 
+        isLoading: false 
+      });
+      return true;
+    } catch (error) {
+      set({ 
+        error: error.response?.data?.error || 'Invalid or expired token', 
+        isLoading: false 
+      });
+      return false;
+    }
+  },
+
   logout: () => {
     localStorage.removeItem('token');
     set({ user: null, token: null, isAuthenticated: false });

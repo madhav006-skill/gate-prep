@@ -67,21 +67,21 @@ exports.login = async (req, res, next) => {
 
     // Validate email & password
     if (!email || !password) {
-      return next(new Error('Please provide an email and password'));
+      return next(new ErrorResponse('Please provide an email and password', 400));
     }
 
     // Check for user
     const user = await User.findOne({ email }).select('+password');
 
     if (!user) {
-      return next(new Error('Invalid credentials'));
+      return next(new ErrorResponse('Invalid credentials', 401));
     }
 
     // Check if password matches
     const isMatch = await user.matchPassword(password);
 
     if (!isMatch) {
-      return next(new Error('Invalid credentials'));
+      return next(new ErrorResponse('Invalid credentials', 401));
     }
 
     sendTokenResponse(user, 200, res);
@@ -109,14 +109,63 @@ exports.getMe = async (req, res, next) => {
 // @route   POST /api/auth/forgot-password
 // @access  Public
 exports.forgotPassword = async (req, res, next) => {
-  // To be implemented
-  res.status(200).json({ success: true, message: 'Forgot password route' });
+  try {
+    const user = await User.findOne({ email: req.body.email });
+
+    if (!user) {
+      return next(new ErrorResponse('There is no user with that email', 404));
+    }
+
+    // Get reset token
+    const resetToken = user.getResetPasswordToken();
+
+    await user.save({ validateBeforeSave: false });
+
+    // Create reset url (we'll just return it in response for dev environment)
+    // Normally you'd email this to the user
+    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+
+    console.log(`[DEV] Password Reset URL for ${user.email}: ${resetUrl}`);
+
+    res.status(200).json({ 
+      success: true, 
+      message: 'Reset token generated (check console)',
+      resetUrl // Exposing it for easy testing
+    });
+  } catch (error) {
+    next(error);
+  }
 };
 
 // @desc    Reset password
 // @route   PUT /api/auth/reset-password/:resettoken
 // @access  Public
 exports.resetPassword = async (req, res, next) => {
-  // To be implemented
-  res.status(200).json({ success: true, message: 'Reset password route' });
+  try {
+    // Get hashed token
+    const crypto = require('crypto');
+    const resetPasswordToken = crypto
+      .createHash('sha256')
+      .update(req.params.resettoken)
+      .digest('hex');
+
+    const user = await User.findOne({
+      resetPasswordToken,
+      resetPasswordExpire: { $gt: Date.now() }
+    });
+
+    if (!user) {
+      return next(new ErrorResponse('Invalid token', 400));
+    }
+
+    // Set new password
+    user.password = req.body.password;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpire = undefined;
+    await user.save();
+
+    sendTokenResponse(user, 200, res);
+  } catch (error) {
+    next(error);
+  }
 };

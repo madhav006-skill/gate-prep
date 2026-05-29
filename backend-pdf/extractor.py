@@ -197,14 +197,14 @@ def process_pdf_job(file_path: str, job_id: str, progress_callback):
         options = []
         q_type  = "NAT"
 
-        option_split = re.split(r'\n?\s*\([Aa]\)\s*', content, maxsplit=1)
+        option_split = re.split(r'\n\s*\([Aa]\)\s+', content, maxsplit=1)
         if len(option_split) > 1:
             q_type        = "MCQ"
             question_body = option_split[0].strip()
-            options_text  = "(A) " + option_split[1]
+            options_text  = "\n(A) " + option_split[1]
 
             for match in re.finditer(
-                r'\(([A-Da-d])\)\s*(.*?)(?=\s*\([A-Da-d]\)|$)',
+                r'\n\s*\(([A-Da-d])\)\s+(.*?)(?=\n\s*\([A-Da-d]\)\s+|$)',
                 options_text, flags=re.DOTALL
             ):
                 val = match.group(2).strip().replace('\n', ' ')

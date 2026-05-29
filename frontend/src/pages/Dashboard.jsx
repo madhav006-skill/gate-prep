@@ -1,12 +1,40 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuthStore } from '../store/authStore';
-import { FileText, TrendingUp, AlertTriangle, BookOpen, LogOut, Shield } from 'lucide-react';
+import { FileText, TrendingUp, AlertTriangle, Brain, LogOut, Shield, Loader2 } from 'lucide-react';
 import api from '../api/client';
 
 const Dashboard = () => {
   const { user, logout } = useAuthStore();
   const navigate = useNavigate();
+
+  const [stats, setStats] = useState({
+    testsAttempted: 0,
+    revisionDue: 0,
+    weakTopics: 0,
+    loading: true
+  });
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const [attemptsRes, revisionRes] = await Promise.allSettled([
+          api.get('/tests/user/my-attempts'),
+          api.get('/revision/summary')
+        ]);
+
+        setStats({
+          testsAttempted: attemptsRes.status === 'fulfilled' ? attemptsRes.value.data.data.length : 0,
+          revisionDue: revisionRes.status === 'fulfilled' ? revisionRes.value.data.data.dueToday : 0,
+          weakTopics: 0, // Will be wired to weakness radar later
+          loading: false
+        });
+      } catch {
+        setStats(prev => ({ ...prev, loading: false }));
+      }
+    };
+    fetchStats();
+  }, []);
 
   const handleLogout = () => {
     logout();
@@ -44,6 +72,7 @@ const Dashboard = () => {
           )}
         </div>
 
+        {/* Stats */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <div className="bg-[#1A1D24] p-6 rounded-xl border border-gray-800 flex items-center shadow-lg">
             <div className="bg-blue-900/30 p-4 rounded-lg mr-4">
@@ -61,7 +90,9 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400 font-medium">Tests Attempted</p>
-              <p className="text-2xl font-bold text-white">0</p>
+              {stats.loading
+                ? <Loader2 size={18} className="animate-spin text-gray-500 mt-1" />
+                : <p className="text-2xl font-bold text-white">{stats.testsAttempted}</p>}
             </div>
           </div>
 
@@ -71,23 +102,29 @@ const Dashboard = () => {
             </div>
             <div>
               <p className="text-sm text-gray-400 font-medium">Weak Topics</p>
-              <p className="text-2xl font-bold text-white">0</p>
+              <p className="text-2xl font-bold text-white">{stats.weakTopics}</p>
             </div>
           </div>
 
           <div className="bg-[#1A1D24] p-6 rounded-xl border border-gray-800 flex items-center shadow-lg">
             <div className="bg-yellow-900/30 p-4 rounded-lg mr-4">
-              <BookOpen className="text-yellow-500" size={24} />
+              <Brain className="text-yellow-500" size={24} />
             </div>
             <div>
               <p className="text-sm text-gray-400 font-medium">Revision Due</p>
-              <p className="text-2xl font-bold text-white">0 Qs</p>
+              {stats.loading
+                ? <Loader2 size={18} className="animate-spin text-gray-500 mt-1" />
+                : <p className="text-2xl font-bold text-white">
+                    {stats.revisionDue > 0
+                      ? <span className="text-red-400">{stats.revisionDue} Qs</span>
+                      : '0 Qs'}
+                  </p>}
             </div>
           </div>
         </div>
 
         <h2 className="text-xl font-bold text-white mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
           <Link to="/tests" className="block bg-gradient-to-br from-blue-900/40 to-[#1A1D24] p-6 rounded-xl border border-blue-800/50 hover:border-blue-500 transition group">
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition">Take a Mock Test</h3>
             <p className="text-sm text-gray-400 mb-4">Experience the real GATE CBT interface with our full-length mock tests.</p>
@@ -100,10 +137,22 @@ const Dashboard = () => {
             <span className="text-emerald-500 text-sm font-medium">View &rarr;</span>
           </Link>
 
-          <Link to="/revision" className="block bg-gradient-to-br from-purple-900/40 to-[#1A1D24] p-6 rounded-xl border border-purple-800/50 hover:border-purple-500 transition group">
-            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition">Mistake Book</h3>
-            <p className="text-sm text-gray-400 mb-4">Revise questions you got wrong or spent too much time on automatically.</p>
-            <span className="text-purple-500 text-sm font-medium">Revise &rarr;</span>
+          <Link to="/weakness-radar" className="block bg-gradient-to-br from-orange-900/40 to-[#1A1D24] p-6 rounded-xl border border-orange-800/50 hover:border-orange-500 transition group relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-orange-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">AI</div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-orange-400 transition">Weakness Radar</h3>
+            <p className="text-sm text-gray-400 mb-4">Get personalized diagnosis and find exactly where you are losing marks.</p>
+            <span className="text-orange-500 text-sm font-medium">Analyze &rarr;</span>
+          </Link>
+
+          <Link to="/revision" className="block bg-gradient-to-br from-indigo-900/40 to-[#1A1D24] p-6 rounded-xl border border-indigo-800/50 hover:border-indigo-500 transition group relative overflow-hidden">
+            {stats.revisionDue > 0 && (
+              <div className="absolute top-0 right-0 bg-red-500 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">
+                {stats.revisionDue} Due
+              </div>
+            )}
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400 transition">Smart Revision</h3>
+            <p className="text-sm text-gray-400 mb-4">Today's weak and slow questions, scheduled automatically with spaced repetition.</p>
+            <span className="text-indigo-500 text-sm font-medium">Open Revision &rarr;</span>
           </Link>
         </div>
       </div>

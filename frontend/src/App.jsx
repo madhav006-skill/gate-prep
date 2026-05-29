@@ -8,9 +8,13 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Analytics from './pages/Analytics';
+import WeaknessRadar from './pages/WeaknessRadar';
 import AdminPanel from './pages/AdminPanel';
 import PdfImporter from './pages/admin/PdfImporter';
 import TestList from './pages/TestList';
+import SmartRevision from './pages/SmartRevision';
+import ForgotPassword from './pages/ForgotPassword';
+import ResetPassword from './pages/ResetPassword';
 
 // Simple Protected Route wrapper
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -35,6 +39,8 @@ function App() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:resettoken" element={<ResetPassword />} />
         <Route path="/dashboard" element={
           <ProtectedRoute>
             <Dashboard />
@@ -45,6 +51,11 @@ function App() {
             <Analytics />
           </ProtectedRoute>
         } />
+        <Route path="/weakness-radar" element={
+          <ProtectedRoute>
+            <WeaknessRadar />
+          </ProtectedRoute>
+        } />
         <Route path="/admin" element={
           <ProtectedRoute adminOnly>
             <PdfImporter />
@@ -53,6 +64,11 @@ function App() {
         <Route path="/tests" element={
           <ProtectedRoute>
             <TestList />
+          </ProtectedRoute>
+        } />
+        <Route path="/revision" element={
+          <ProtectedRoute>
+            <SmartRevision />
           </ProtectedRoute>
         } />
         <Route path="/exam/:testId" element={<ExamLayout />} />
