@@ -60,32 +60,31 @@ function estimateRankRange(records, targetMarks) {
     };
   }
 
+  // Handle exact matches (average if multiple)
+  const exactPoints = sorted.filter(r => r.rawMarks === targetMarks);
+  if (exactPoints.length > 0) {
+    const avgRank = exactPoints.reduce((sum, r) => sum + r.allIndiaRank, 0) / exactPoints.length;
+    const buffer = Math.round(avgRank * 0.15);
+    return {
+      rankMin: Math.max(1, Math.round(avgRank - buffer)),
+      rankMax: Math.round(avgRank + buffer),
+      centralEstimate: avgRank,
+      nearestPoints: [{ rawMarks: targetMarks, allIndiaRank: Math.round(avgRank) }],
+      nearbyCount: exactPoints.length
+    };
+  }
+
   // Find nearest brackets
   let upperPoint = null; // closest record with marks > targetMarks
   let lowerPoint = null; // closest record with marks < targetMarks
-  let exactPoint = null;
 
   for (const r of sorted) {
-    if (r.rawMarks === targetMarks) {
-      exactPoint = r;
-      break;
-    }
     if (r.rawMarks > targetMarks && (!upperPoint || r.rawMarks < upperPoint.rawMarks)) {
       upperPoint = r;
     }
     if (r.rawMarks < targetMarks && (!lowerPoint || r.rawMarks > lowerPoint.rawMarks)) {
       lowerPoint = r;
     }
-  }
-
-  if (exactPoint) {
-    const buffer = Math.round(exactPoint.allIndiaRank * 0.15);
-    return {
-      rankMin: Math.max(1, exactPoint.allIndiaRank - buffer),
-      rankMax: exactPoint.allIndiaRank + buffer,
-      nearestPoints: [{ rawMarks: exactPoint.rawMarks, allIndiaRank: exactPoint.allIndiaRank }],
-      nearbyCount: 1
-    };
   }
 
   if (!upperPoint || !lowerPoint) {
@@ -100,14 +99,78 @@ function estimateRankRange(records, targetMarks) {
   const nearbyRecords = records.filter(r => Math.abs(r.rawMarks - targetMarks) <= 10);
 
   return {
-    rankMin: Math.max(1, centralEstimate - buffer),
-    rankMax: centralEstimate + buffer,
+    rankMin: Math.max(1, Math.round(centralEstimate - buffer)),
+    rankMax: Math.round(centralEstimate + buffer),
     centralEstimate,
     nearestPoints: [
       { rawMarks: upperPoint.rawMarks, allIndiaRank: upperPoint.allIndiaRank },
       { rawMarks: lowerPoint.rawMarks, allIndiaRank: lowerPoint.allIndiaRank }
     ],
     nearbyCount: nearbyRecords.length
+  };
+}
+
+function estimateAveragedRank(records, targetMarks) {
+  // Group records by year to avoid mixing different exam difficulties
+  const byYear = {};
+  records.forEach(r => {
+    if (!byYear[r.examYear]) byYear[r.examYear] = [];
+    byYear[r.examYear].push(r);
+  });
+
+  const validYears = Object.keys(byYear);
+  const estimations = [];
+  const outOfRangeAbove = [];
+  const outOfRangeBelow = [];
+
+  for (const year of validYears) {
+    const yearRecords = byYear[year];
+    if (yearRecords.length >= 2) { // Need at least 2 points
+      const est = estimateRankRange(yearRecords, targetMarks);
+      if (!est.error) {
+        if (est.outOfRange === 'above') outOfRangeAbove.push(est);
+        else if (est.outOfRange === 'below') outOfRangeBelow.push(est);
+        else estimations.push(est);
+      }
+    }
+  }
+
+  if (estimations.length === 0) {
+    if (outOfRangeAbove.length > 0) {
+      const avgBounded = outOfRangeAbove.reduce((s, e) => s + e.boundedEstimate, 0) / outOfRangeAbove.length;
+      return { outOfRange: 'above', boundedEstimate: Math.round(avgBounded), message: `Your marks (${targetMarks}) are above the highest verified records for the selected years.` };
+    }
+    if (outOfRangeBelow.length > 0) {
+      return { outOfRange: 'below', message: `Your marks (${targetMarks}) are below the lowest verified records for the selected years.` };
+    }
+    return { error: 'insufficient_bracket_data' };
+  }
+
+  // Average the central estimates from years that were successfully estimated
+  const avgCentral = estimations.reduce((s, e) => s + e.centralEstimate, 0) / estimations.length;
+  const buffer = Math.round(avgCentral * 0.15);
+  
+  const combinedNearbyCount = estimations.reduce((s, e) => s + e.nearbyCount, 0);
+  const allNearest = estimations.flatMap(e => e.nearestPoints).sort((a,b) => Math.abs(a.rawMarks - targetMarks) - Math.abs(b.rawMarks - targetMarks));
+  
+  // Take top 2 unique nearest points
+  const uniqueNearest = [];
+  const seen = new Set();
+  for (const p of allNearest) {
+    const key = `${p.rawMarks}-${p.allIndiaRank}`;
+    if (!seen.has(key)) {
+      seen.add(key);
+      uniqueNearest.push(p);
+      if (uniqueNearest.length >= 2) break;
+    }
+  }
+
+  return {
+    rankMin: Math.max(1, Math.round(avgCentral - buffer)),
+    rankMax: Math.round(avgCentral + buffer),
+    centralEstimate: avgCentral,
+    nearestPoints: uniqueNearest,
+    nearbyCount: combinedNearbyCount
   };
 }
 
@@ -177,7 +240,7 @@ exports.estimate = async (req, res, next) => {
     }
 
     // Do estimation
-    const estimation = estimateRankRange(records, marks);
+    const estimation = estimateAveragedRank(records, marks);
 
     if (estimation.error) {
       return res.status(200).json({
@@ -208,11 +271,10 @@ exports.estimate = async (req, res, next) => {
     // Calculate confidence
     const confidence = getConfidence(records.length, estimation.nearbyCount, usingOverall);
 
-    // Estimate GATE score range if score data available
     const scoreRecords = records.filter(r => r.gateScore != null);
     let estimatedScoreRange = null;
     if (scoreRecords.length >= 5) {
-      const scoreEst = estimateRankRange(scoreRecords.map(r => ({ rawMarks: r.rawMarks, allIndiaRank: r.gateScore })), marks);
+      const scoreEst = estimateAveragedRank(scoreRecords.map(r => ({ ...r, allIndiaRank: r.gateScore })), marks);
       if (!scoreEst.error && !scoreEst.outOfRange) {
         estimatedScoreRange = { min: scoreEst.rankMin, max: scoreEst.rankMax };
       }
