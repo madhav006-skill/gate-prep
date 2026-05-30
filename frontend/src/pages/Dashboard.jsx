@@ -124,7 +124,7 @@ const Dashboard = () => {
         </div>
 
         <h2 className="text-xl font-bold text-white mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
           <Link to="/tests" className="block bg-gradient-to-br from-blue-900/40 to-[#1A1D24] p-6 rounded-xl border border-blue-800/50 hover:border-blue-500 transition group">
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition">Take a Mock Test</h3>
             <p className="text-sm text-gray-400 mb-4">Experience the real GATE CBT interface with our full-length mock tests.</p>
@@ -153,6 +153,13 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-indigo-400 transition">Smart Revision</h3>
             <p className="text-sm text-gray-400 mb-4">Today's weak and slow questions, scheduled automatically with spaced repetition.</p>
             <span className="text-indigo-500 text-sm font-medium">Open Revision &rarr;</span>
+          </Link>
+
+          <Link to="/rank-estimator" className="block bg-gradient-to-br from-purple-900/40 to-[#1A1D24] p-6 rounded-xl border border-purple-800/50 hover:border-purple-500 transition group relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-purple-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">REAL DATA</div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition">Rank Estimator</h3>
+            <p className="text-sm text-gray-400 mb-4">Estimate your GATE rank using real verified historical marks-vs-rank data.</p>
+            <span className="text-purple-500 text-sm font-medium">Estimate →</span>
           </Link>
         </div>
       </div>

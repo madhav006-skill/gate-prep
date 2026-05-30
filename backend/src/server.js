@@ -58,6 +58,7 @@ const importRoute = require('./routes/import');
 const uploadRoute = require('./routes/upload');
 const analytics = require('./routes/analytics');
 const revision = require('./routes/revision');
+const rankEstimator = require('./routes/rankEstimator');
 
 // Mount routers
 app.use('/api/auth', auth);
@@ -67,6 +68,7 @@ app.use('/api/import', importRoute);
 app.use('/api/upload', uploadRoute);
 app.use('/api/analytics', analytics);
 app.use('/api/revision', revision);
+app.use('/api/rank-estimator', rankEstimator);
 
 // Error handler middleware
 app.use(errorHandler);

@@ -15,6 +15,8 @@ import TestList from './pages/TestList';
 import SmartRevision from './pages/SmartRevision';
 import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
+import RankEstimator from './pages/RankEstimator';
+import GateDatasetManager from './pages/admin/GateDatasetManager';
 
 // Simple Protected Route wrapper
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -69,6 +71,16 @@ function App() {
         <Route path="/revision" element={
           <ProtectedRoute>
             <SmartRevision />
+          </ProtectedRoute>
+        } />
+        <Route path="/rank-estimator" element={
+          <ProtectedRoute>
+            <RankEstimator />
+          </ProtectedRoute>
+        } />
+        <Route path="/admin/gate-dataset" element={
+          <ProtectedRoute adminOnly>
+            <GateDatasetManager />
           </ProtectedRoute>
         } />
         <Route path="/exam/:testId" element={<ExamLayout />} />
