@@ -132,11 +132,13 @@ exports.getRevisionSummary = async (req, res) => {
     todayEnd.setHours(23, 59, 59, 999);
 
     // Mark overdue
+    const startOfDay = new Date(today);
+    startOfDay.setHours(0, 0, 0, 0);
     await RevisionQuestion.updateMany(
       {
         user: userId,
         status: { $in: ['Due', 'Upcoming'] },
-        dueDate: { $lt: new Date(today.setHours(0, 0, 0, 0)) }
+        dueDate: { $lt: startOfDay }
       },
       { $set: { status: 'Overdue' } }
     );
@@ -196,10 +198,13 @@ exports.practiceRevision = async (req, res) => {
     } else if (q.type === 'NAT') {
       const userVal = parseFloat(answer);
       if (typeof q.correctAnswer === 'string' && q.correctAnswer.includes('-')) {
-        const [min, max] = q.correctAnswer.split('-').map(parseFloat);
-        isCorrect = userVal >= min && userVal <= max;
+        const parts = q.correctAnswer.split('-').map(v => parseFloat(v));
+        const min = parts[0];
+        const max = parts[1];
+        isCorrect = !isNaN(userVal) && userVal >= min && userVal <= max;
       } else {
-        isCorrect = userVal === parseFloat(q.correctAnswer);
+        const correctVal = parseFloat(q.correctAnswer);
+        isCorrect = !isNaN(userVal) && !isNaN(correctVal) && Math.abs(userVal - correctVal) < 0.01;
       }
     }
 
