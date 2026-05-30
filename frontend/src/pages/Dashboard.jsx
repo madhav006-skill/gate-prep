@@ -44,29 +44,29 @@ const Dashboard = () => {
   return (
     <div className="min-h-screen bg-[#0F1117] text-gray-200 font-sans">
       {/* Navbar */}
-      <nav className="flex justify-between items-center bg-[#1A1D24] py-4 px-8 border-b border-gray-800">
+      <nav className="flex flex-col sm:flex-row justify-between items-center bg-[#1A1D24] py-4 px-4 sm:px-8 border-b border-gray-800 space-y-4 sm:space-y-0">
         <div className="text-xl font-bold text-blue-500">GATEForge</div>
-        <div className="flex items-center space-x-6">
-          <span className="font-medium text-gray-300">Hello, {user?.name || 'Student'}</span>
+        <div className="flex items-center space-x-4 sm:space-x-6">
+          <span className="font-medium text-gray-300 hidden sm:inline">Hello, {user?.name || 'Student'}</span>
           {user?.role === 'admin' && (
-            <Link to="/admin" className="px-4 py-2 bg-emerald-600/20 text-emerald-500 rounded-lg font-bold hover:bg-emerald-600/30 transition">
+            <Link to="/admin" className="px-3 py-1 sm:px-4 sm:py-2 bg-emerald-600/20 text-emerald-500 rounded-lg font-bold hover:bg-emerald-600/30 transition text-sm sm:text-base">
               Admin Panel
             </Link>
           )}
-          <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-400 transition">
+          <button onClick={handleLogout} className="flex items-center text-gray-400 hover:text-red-400 transition text-sm sm:text-base">
             <LogOut size={18} className="mr-1"/> Logout
           </button>
         </div>
       </nav>
 
-      <div className="max-w-7xl mx-auto px-6 py-10">
-        <div className="flex justify-between items-end mb-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-10">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end mb-8 sm:mb-10 space-y-4 sm:space-y-0">
           <div>
-            <h1 className="text-3xl font-bold text-white mb-2">Your Dashboard</h1>
+            <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">Your Dashboard</h1>
             <p className="text-gray-400">Targeting GATE {user?.targetYear || '2026'} in {user?.targetSubject || 'CS'}</p>
           </div>
           {user?.role === 'admin' && (
-            <Link to="/admin" className="bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 px-4 py-2 rounded-lg transition flex items-center">
+            <Link to="/admin" className="bg-blue-900/30 text-blue-400 border border-blue-800 hover:bg-blue-900/50 px-4 py-2 rounded-lg transition flex items-center text-sm sm:text-base">
               <Shield size={16} className="mr-2"/> Admin Panel
             </Link>
           )}

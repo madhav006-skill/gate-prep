@@ -245,7 +245,7 @@ export default function SmartRevision() {
       <div className="max-w-5xl mx-auto px-4 py-8">
 
         {/* ── Header ── */}
-        <div className="flex items-start justify-between mb-8 gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-8 gap-4">
           <div>
             <div className="flex items-center gap-3 mb-2">
               <div className="p-2 bg-indigo-500/20 rounded-xl">
@@ -261,7 +261,7 @@ export default function SmartRevision() {
             onClick={handleGenerate}
             disabled={generating}
             title="Regenerate revision queue from all past attempts"
-            className="flex items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-400 rounded-xl text-sm font-medium transition disabled:opacity-50"
+            className="w-full sm:w-auto flex justify-center items-center gap-2 px-4 py-2.5 bg-indigo-600/20 hover:bg-indigo-600/40 border border-indigo-500/30 text-indigo-400 rounded-xl text-sm font-medium transition disabled:opacity-50"
           >
             {generating
               ? <Loader2 size={15} className="animate-spin" />

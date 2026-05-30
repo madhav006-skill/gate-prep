@@ -61,7 +61,7 @@ function AddRecordModal({ onClose }) {
         </div>
         {err && <div className="bg-red-900/30 border border-red-500/40 text-red-400 text-sm px-4 py-2 rounded-lg mb-4">{err}</div>}
         <form onSubmit={handleSubmit} className="space-y-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Year *</label>
               <select className="w-full bg-[#0F1117] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
@@ -84,7 +84,7 @@ function AddRecordModal({ onClose }) {
               {CATEGORIES.map(c => <option key={c}>{c}</option>)}
             </select>
           </div>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <Field label="Raw Marks *" name="rawMarks" type="number" step="0.01" placeholder="62.33" />
             <Field label="GATE Score" name="gateScore" type="number" placeholder="Optional" />
             <Field label="AIR *" name="allIndiaRank" type="number" placeholder="1450" />
@@ -95,7 +95,7 @@ function AddRecordModal({ onClose }) {
               placeholder="e.g. Coaching institute dataset, Student report" 
               value={form.sourceLabel} onChange={e => setForm(f => ({ ...f, sourceLabel: e.target.value }))} />
           </div>
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
               <label className="block text-xs text-gray-400 mb-1">Source Type</label>
               <select className="w-full bg-[#0F1117] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
@@ -224,8 +224,8 @@ const GateDatasetManager = () => {
   return (
     <div className="min-h-screen bg-[#0F1117] text-gray-200 font-sans">
       {/* Header */}
-      <div className="bg-[#1A1D24] border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <div className="flex items-center gap-4">
+      <div className="bg-[#1A1D24] border-b border-gray-800 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-start sm:items-center justify-between space-y-4 sm:space-y-0">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-2 sm:gap-4">
           <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white text-sm">← Dashboard</button>
           <h1 className="text-lg font-bold text-white flex items-center gap-2">
             <Database size={18} className="text-purple-400" /> GATE Rank Dataset Manager

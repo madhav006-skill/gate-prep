@@ -82,7 +82,7 @@ function SubmitResultModal({ onClose }) {
             </div>
             {err && <div className="bg-red-900/30 border border-red-500/40 text-red-400 text-sm px-4 py-2 rounded-lg mb-4">{err}</div>}
             <form onSubmit={handleSubmit} className="space-y-3">
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="text-xs text-gray-400 mb-1 block">Year *</label>
                   <select className="w-full bg-[#0F1117] border border-gray-700 rounded-lg px-3 py-2 text-white text-sm"
@@ -105,7 +105,7 @@ function SubmitResultModal({ onClose }) {
                   {CATEGORIES.map(c => <option key={c}>{c}</option>)}
                 </select>
               </div>
-              <div className="grid grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {[['rawMarks','Raw Marks *','e.g. 62.33'],['gateScore','GATE Score','Optional'],['allIndiaRank','AIR *','e.g. 1450']].map(([key, label, ph]) => (
                   <div key={key}>
                     <label className="text-xs text-gray-400 mb-1 block">{label}</label>
@@ -162,19 +162,19 @@ const RankEstimator = () => {
   return (
     <div className="min-h-screen bg-[#0F1117] text-gray-200 font-sans">
       {/* Header */}
-      <div className="bg-gradient-to-r from-[#0F1117] via-[#1a1535] to-[#0F1117] border-b border-gray-800 px-6 py-4 flex items-center justify-between">
-        <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white text-sm flex items-center gap-2">
+      <div className="bg-gradient-to-r from-[#0F1117] via-[#1a1535] to-[#0F1117] border-b border-gray-800 px-4 sm:px-6 py-4 flex flex-col sm:flex-row items-center sm:justify-between space-y-4 sm:space-y-0">
+        <button onClick={() => navigate('/dashboard')} className="text-gray-400 hover:text-white text-sm flex items-center gap-2 self-start sm:self-auto">
           ← Dashboard
         </button>
-        <div className="text-center">
+        <div className="text-center w-full sm:w-auto">
           <h1 className="text-lg font-bold text-white flex items-center gap-2 justify-center">
-            <TrendingUp size={20} className="text-purple-400" />
+            <TrendingUp size={20} className="text-purple-400 shrink-0" />
             Real GATE Rank Estimator
           </h1>
-          <p className="text-xs text-gray-500">Historical-data-based estimation · Only verified records</p>
+          <p className="text-xs text-gray-500 mt-1">Historical-data-based estimation · Only verified records</p>
         </div>
         <button onClick={() => setShowSubmit(true)}
-          className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 px-3 py-1.5 rounded-lg flex items-center gap-1.5 transition">
+          className="text-xs bg-gray-800 hover:bg-gray-700 text-gray-300 hover:text-white border border-gray-700 px-3 py-2 rounded-lg flex items-center gap-1.5 transition self-stretch sm:self-auto justify-center">
           <Send size={12} /> Submit My Result
         </button>
       </div>

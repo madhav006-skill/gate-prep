@@ -120,16 +120,16 @@ const ExamLayout = () => {
   return (
     <div className="flex flex-col h-screen bg-[#0F1117] text-gray-200 font-sans">
       {/* Header */}
-      <header className="flex justify-between items-center bg-[#1E2128] p-4 border-b border-gray-700">
+      <header className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-[#1E2128] p-4 border-b border-gray-700 space-y-4 sm:space-y-0">
         <div>
           <h1 className="text-xl font-bold text-blue-400">{testMeta.title}</h1>
           <p className="text-sm text-gray-400">{testMeta.subject}</p>
         </div>
         
-        <div className="flex items-center space-x-6">
+        <div className="flex w-full sm:w-auto items-center justify-between sm:justify-end space-x-0 sm:space-x-6">
           <button 
             onClick={toggleFullscreen}
-            className="flex items-center text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition"
+            className="flex items-center text-sm bg-gray-700 hover:bg-gray-600 px-3 py-1 rounded transition mr-4 sm:mr-0"
           >
             {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
           </button>
@@ -142,9 +142,9 @@ const ExamLayout = () => {
       </header>
 
       {/* Main Content */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-col md:flex-row flex-1 overflow-y-auto md:overflow-hidden">
         {/* Left: Question Area */}
-        <div className="flex-1 flex flex-col overflow-y-auto border-r border-gray-700">
+        <div className="flex-1 flex flex-col md:overflow-y-auto border-b md:border-b-0 md:border-r border-gray-700 min-h-[60vh] md:min-h-0">
           <div className="flex justify-between items-center bg-gray-800 p-2 border-b border-gray-700">
             <div className="flex items-center text-sm font-medium text-gray-300">
               <span className="bg-blue-600 text-white px-2 py-1 rounded mr-3">
@@ -168,7 +168,7 @@ const ExamLayout = () => {
         </div>
 
         {/* Right: Question Palette & Profile */}
-        <div className="w-80 flex flex-col bg-[#1A1D24]">
+        <div className="w-full md:w-80 flex flex-col bg-[#1A1D24] md:overflow-y-auto">
           {/* Candidate Profile summary */}
           <div className="flex items-center p-4 border-b border-gray-700">
             <div className="w-12 h-12 rounded-full bg-gray-600 mr-4"></div>
@@ -188,7 +188,7 @@ const ExamLayout = () => {
           </div>
           
           {/* Palette Grid */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="flex-1 p-4">
             <h3 className="font-semibold mb-3 text-sm text-gray-300">Question Palette:</h3>
             <QuestionPalette />
           </div>

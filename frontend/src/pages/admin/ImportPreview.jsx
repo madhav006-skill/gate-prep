@@ -103,13 +103,13 @@ const ImportPreview = ({ questions, onSave, onCancel }) => {
   }
 
   return (
-    <div className="max-w-6xl mx-auto mt-6">
-      <div className="flex justify-between items-center mb-6">
+    <div className="max-w-6xl mx-auto mt-6 px-4 sm:px-0">
+      <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 space-y-4 md:space-y-0">
         <div>
-          <h2 className="text-2xl font-bold text-white mb-1">Preview Extracted Questions</h2>
-          <p className="text-gray-400">Review OCR results before saving. {editableQuestions.filter(q => q.approved).length} selected.</p>
+          <h2 className="text-xl sm:text-2xl font-bold text-white mb-1">Preview Extracted Questions</h2>
+          <p className="text-sm sm:text-base text-gray-400">Review OCR results before saving. {editableQuestions.filter(q => q.approved).length} selected.</p>
         </div>
-        <div className="flex space-x-4">
+        <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
           <button onClick={onCancel} disabled={isSaving} className="px-6 py-2 rounded-lg font-medium bg-gray-800 text-gray-300 hover:bg-gray-700 transition disabled:opacity-50">
             Discard
           </button>
@@ -202,13 +202,13 @@ const ImportPreview = ({ questions, onSave, onCancel }) => {
       <div className="space-y-6">
         {editableQuestions.map((q, idx) => (
           <div key={idx} className={`bg-[#1A1D24] p-6 rounded-2xl border transition ${q.approved ? 'border-emerald-500/50 shadow-[0_0_15px_rgba(16,185,129,0.1)]' : 'border-gray-800 opacity-60'}`}>
-            <div className="flex justify-between items-start mb-4">
-              <div className="flex space-x-3">
+            <div className="flex flex-col md:flex-row justify-between items-start mb-4 gap-4">
+              <div className="flex flex-wrap gap-2">
                 <span className="bg-blue-900/40 text-blue-400 px-3 py-1 rounded text-xs font-bold">{q.type || q.questionType}</span>
                 <span className="bg-purple-900/40 text-purple-400 px-3 py-1 rounded text-xs font-bold">{q.subject} • {q.topic}</span>
                 <span className="bg-yellow-900/40 text-yellow-400 px-3 py-1 rounded text-xs font-bold">{q.marks} Marks</span>
               </div>
-              <div className="flex space-x-3">
+              <div className="flex gap-3 self-end md:self-auto">
                 <button onClick={() => setEditingIndex(idx)} className="text-gray-400 hover:text-blue-400 flex items-center text-sm transition">
                   <Edit3 size={16} className="mr-1"/> Edit
                 </button>

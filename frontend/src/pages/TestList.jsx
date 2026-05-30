@@ -35,7 +35,7 @@ const TestList = () => {
   };
 
   return (
-    <div className="min-h-screen bg-[#0F1117] text-gray-200 font-sans p-8">
+    <div className="min-h-screen bg-[#0F1117] text-gray-200 font-sans p-4 sm:p-8">
       <div className="max-w-6xl mx-auto">
         <button 
           onClick={() => navigate('/dashboard')}
@@ -77,7 +77,7 @@ const TestList = () => {
                 <h3 className="text-xl font-bold text-white mb-2">{test.title}</h3>
                 <p className="text-sm text-gray-400 mb-6 flex-grow">{test.description}</p>
                 
-                <div className="flex items-center justify-between text-sm text-gray-300 mb-6 bg-[#0F1117] p-3 rounded-lg">
+                <div className="flex flex-wrap items-center justify-between gap-2 text-sm text-gray-300 mb-6 bg-[#0F1117] p-3 rounded-lg">
                   <div className="flex items-center">
                     <Clock size={16} className="text-gray-500 mr-2" />
                     <span>{test.duration} Mins</span>
