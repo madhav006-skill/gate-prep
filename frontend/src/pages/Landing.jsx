@@ -7,14 +7,14 @@ const Landing = () => {
   return (
     <div className="min-h-screen bg-[#0F1117] text-white overflow-hidden font-sans">
       {/* Navbar */}
-      <nav className="flex justify-between items-center py-6 px-8 lg:px-20 border-b border-gray-800">
-        <div className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
+      <nav className="flex justify-between items-center py-4 sm:py-6 px-4 sm:px-8 lg:px-20 border-b border-gray-800">
+        <div className="text-xl sm:text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-emerald-400">
           GATEForge
         </div>
-        <div className="flex space-x-6 items-center">
-          <Link to="/login" className="text-gray-300 hover:text-white transition">Log in</Link>
-          <Link to="/register" className="bg-blue-600 hover:bg-blue-500 px-5 py-2 rounded-lg font-medium transition">
-            Sign up for free
+        <div className="flex space-x-3 sm:space-x-6 items-center">
+          <Link to="/login" className="text-gray-300 hover:text-white transition whitespace-nowrap text-sm sm:text-base">Log in</Link>
+          <Link to="/register" className="bg-blue-600 hover:bg-blue-500 px-3 sm:px-5 py-2 rounded-lg font-medium transition whitespace-nowrap text-sm sm:text-base">
+            Sign up <span className="hidden sm:inline">for free</span>
           </Link>
         </div>
       </nav>
