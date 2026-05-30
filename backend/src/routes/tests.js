@@ -18,11 +18,13 @@ router.route('/')
   .get(getTests)
   .post(protect, authorize('admin'), createTest);
 
-router.route('/:id')
-  .get(getTest);
-
+// IMPORTANT: Specific routes MUST come before parameterized /:id routes
+// Otherwise Express matches 'user' as an :id parameter
 router.route('/user/my-attempts')
   .get(protect, getMyAttempts);
+
+router.route('/:id')
+  .get(getTest);
 
 router.route('/:id/start')
   .post(protect, startTestAttempt);

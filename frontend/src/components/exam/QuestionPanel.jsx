@@ -50,8 +50,12 @@ const QuestionPanel = () => {
   };
 
   const handleSaveAndNext = () => {
-    // If answered, it is implicitly handled by setAnswer (status becomes 'Answered')
-    // We just save to backend and navigate
+    // Commit local NAT value to the store before saving to backend
+    // (handles the case where user clicks Save & Next without blurring the input)
+    if (question.type === 'NAT' && localNatValue !== '') {
+      setAnswer(question._id, localNatValue);
+    }
+    
     saveAnswerToBackend(question._id);
     if (currentQuestionIndex < questions.length - 1) {
       navigateQuestion(currentQuestionIndex + 1);

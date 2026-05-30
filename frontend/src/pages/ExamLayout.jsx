@@ -96,9 +96,15 @@ const ExamLayout = () => {
     );
   }
 
+  // Redirect to result when submitted
+  useEffect(() => {
+    if (isSubmitted) {
+      const attemptId = useExamStore.getState().attemptId;
+      navigate(`/result/${attemptId}`);
+    }
+  }, [isSubmitted, navigate]);
+
   if (isSubmitted) {
-    // Redirect to results immediately after submission
-    navigate(`/result/${useExamStore.getState().attemptId}`);
     return null;
   }
 

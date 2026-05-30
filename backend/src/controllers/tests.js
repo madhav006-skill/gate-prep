@@ -112,7 +112,8 @@ exports.saveAnswer = async (req, res, next) => {
     if (answerIndex > -1) {
       attempt.answers[answerIndex].answer = answer;
       attempt.answers[answerIndex].status = status;
-      attempt.answers[answerIndex].timeSpent += (timeSpent || 0);
+      // Frontend sends cumulative timeSpent (not a delta), so use assignment not +=
+      attempt.answers[answerIndex].timeSpent = timeSpent || 0;
     }
 
     await attempt.save();
@@ -166,7 +167,8 @@ exports.submitTest = async (req, res, next) => {
             score += question.marks;
             correctCount++;
           } else {
-            ans.marksAwarded = -(question.negativeMarks || (question.marks / 3));
+            const negMarks = question.negativeMarks != null ? question.negativeMarks : (question.marks / 3);
+            ans.marksAwarded = -negMarks;
             score += ans.marksAwarded;
           }
         } else if (question.type === 'MSQ') {
@@ -178,10 +180,13 @@ exports.submitTest = async (req, res, next) => {
         } else if (question.type === 'NAT') {
           const userVal = parseFloat(ans.answer);
           if (typeof question.correctAnswer === 'string' && question.correctAnswer.includes('-')) {
-            const [min, max] = question.correctAnswer.split('-').map(parseFloat);
-            isCorrect = userVal >= min && userVal <= max;
+            const parts = question.correctAnswer.split('-').map(v => parseFloat(v));
+            const min = parts[0];
+            const max = parts[1];
+            isCorrect = !isNaN(userVal) && userVal >= min && userVal <= max;
           } else {
-            isCorrect = userVal === parseFloat(question.correctAnswer);
+            const correctVal = parseFloat(question.correctAnswer);
+            isCorrect = !isNaN(userVal) && !isNaN(correctVal) && Math.abs(userVal - correctVal) < 0.01;
           }
           ans.marksAwarded = isCorrect ? question.marks : 0;
           if (isCorrect) { score += question.marks; correctCount++; }
@@ -297,6 +302,8 @@ exports.submitTest = async (req, res, next) => {
     attempt.score = Math.round(score * 100) / 100;
     attempt.accuracy = attemptedCount > 0 ? (correctCount / attemptedCount) * 100 : 0;
     attempt.status = 'Submitted';
+    attempt.endTime = new Date();
+    attempt.timeTaken = Math.round(timeTaken);
 
     await attempt.save();
 

@@ -7,7 +7,9 @@ const RichQuestionEditor = ({ question, onSave, onCancel }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setEdited(prev => ({ ...prev, [name]: value }));
+    // Parse numeric fields as integers
+    const parsedValue = name === 'marks' ? parseInt(value, 10) : value;
+    setEdited(prev => ({ ...prev, [name]: parsedValue }));
   };
 
   const handleSave = () => {

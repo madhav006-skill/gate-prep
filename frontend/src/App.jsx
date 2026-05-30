@@ -83,8 +83,16 @@ function App() {
             <GateDatasetManager />
           </ProtectedRoute>
         } />
-        <Route path="/exam/:testId" element={<ExamLayout />} />
-        <Route path="/result/:attemptId" element={<ResultLayout />} />
+        <Route path="/exam/:testId" element={
+          <ProtectedRoute>
+            <ExamLayout />
+          </ProtectedRoute>
+        } />
+        <Route path="/result/:attemptId" element={
+          <ProtectedRoute>
+            <ResultLayout />
+          </ProtectedRoute>
+        } />
       </Routes>
     </div>
   );

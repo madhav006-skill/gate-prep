@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Save, X, Edit3, Check, Eye } from 'lucide-react';
 import RichQuestionEditor from '../../components/admin/RichQuestionEditor';
+import api from '../../api/client';
 import 'katex/dist/katex.min.css';
 import renderMathInElement from 'katex/dist/contrib/auto-render';
 

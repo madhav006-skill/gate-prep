@@ -121,17 +121,23 @@ exports.forgotPassword = async (req, res, next) => {
 
     await user.save({ validateBeforeSave: false });
 
-    // Create reset url (we'll just return it in response for dev environment)
-    // Normally you'd email this to the user
-    const resetUrl = `http://localhost:5173/reset-password/${resetToken}`;
+    // Create reset url
+    const clientUrl = process.env.CLIENT_URL || 'http://localhost:5173';
+    const resetUrl = `${clientUrl}/reset-password/${resetToken}`;
 
     console.log(`[DEV] Password Reset URL for ${user.email}: ${resetUrl}`);
 
-    res.status(200).json({ 
+    const responseData = { 
       success: true, 
-      message: 'Reset token generated (check console)',
-      resetUrl // Exposing it for easy testing
-    });
+      message: 'Password reset token generated. In production, this would be sent via email.'
+    };
+    
+    // Only expose resetUrl in non-production for dev testing
+    if (process.env.NODE_ENV !== 'production') {
+      responseData.resetUrl = resetUrl;
+    }
+
+    res.status(200).json(responseData);
   } catch (error) {
     next(error);
   }
