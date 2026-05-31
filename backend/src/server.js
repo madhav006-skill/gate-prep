@@ -59,6 +59,8 @@ const uploadRoute = require('./routes/upload');
 const analytics = require('./routes/analytics');
 const revision = require('./routes/revision');
 const rankEstimator = require('./routes/rankEstimator');
+const mistakes = require('./routes/mistakes');
+const adaptive = require('./routes/adaptive');
 
 // Mount routers
 app.use('/api/auth', auth);
@@ -69,6 +71,8 @@ app.use('/api/upload', uploadRoute);
 app.use('/api/analytics', analytics);
 app.use('/api/revision', revision);
 app.use('/api/rank-estimator', rankEstimator);
+app.use('/api/mistakes', mistakes);
+app.use('/api/adaptive', adaptive);
 
 // Error handler middleware
 app.use(errorHandler);

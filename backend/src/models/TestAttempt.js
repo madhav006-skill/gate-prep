@@ -58,6 +58,9 @@ const TestAttemptSchema = new mongoose.Schema({
   accuracy: {
     type: Number, // Percentage
     default: 0
+  },
+  adaptiveInsights: {
+    type: Object
   }
 }, {
   timestamps: true

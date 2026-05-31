@@ -1,6 +1,55 @@
 const RevisionQuestion = require('../models/RevisionQuestion');
 const Question = require('../models/Question');
 const TestAttempt = require('../models/TestAttempt');
+const Mistake = require('../models/Mistake');
+
+const logMistakeFromRevision = async (userId, question, answer, isCorrect, timeSpent) => {
+  try {
+    const category = 'Concept Gap'; // Default for revision failure
+    const priority = 'High';
+    const marksLost = question.marks || 0;
+    
+    const historyEntry = {
+      questionId: question._id,
+      userAnswer: answer,
+      wasCorrect: isCorrect,
+      timeSpent: timeSpent || 0,
+      marksLost: isCorrect ? 0 : marksLost,
+      source: 'revision_practice',
+      detectedCategory: category
+    };
+
+    let mistake = await Mistake.findOne({ user: userId, question: question._id });
+    
+    if (mistake) {
+      mistake.timesRepeated += 1;
+      mistake.lastOccurredAt = Date.now();
+      mistake.status = 'Open';
+      mistake.priority = 'High';
+      mistake.marksLost += historyEntry.marksLost;
+      mistake.history.push(historyEntry);
+      await mistake.save();
+    } else {
+      await Mistake.create({
+        user: userId,
+        question: question._id,
+        subject: question.subject || 'General',
+        topic: question.topic || 'General',
+        questionType: question.type,
+        detectedCategory: category,
+        priority,
+        status: 'Open',
+        timesRepeated: 1,
+        marksLost: historyEntry.marksLost,
+        fixAction: "Revise core concept of this topic and solve 10 PYQs.",
+        source: 'revision_practice',
+        history: [historyEntry]
+      });
+    }
+  } catch (err) {
+    console.error('Error logging mistake from revision:', err);
+  }
+};
 
 // Helper: compute dueDate based on reason
 function computeDueDate(reason) {
@@ -250,6 +299,11 @@ exports.practiceRevision = async (req, res) => {
         }
       }
     });
+
+    // If answer is wrong during revision, log it to Mistake notebook
+    if (resultType === 'Wrong') {
+      await logMistakeFromRevision(req.user.id, q, answer, isCorrect, timeSpent);
+    }
 
     res.status(200).json({
       success: true,

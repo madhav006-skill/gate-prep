@@ -124,7 +124,7 @@ const Dashboard = () => {
         </div>
 
         <h2 className="text-xl font-bold text-white mb-6">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 xl:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <Link to="/tests" className="block bg-gradient-to-br from-blue-900/40 to-[#1A1D24] p-6 rounded-xl border border-blue-800/50 hover:border-blue-500 transition group">
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-blue-400 transition">Take a Mock Test</h3>
             <p className="text-sm text-gray-400 mb-4">Experience the real GATE CBT interface with our full-length mock tests.</p>
@@ -160,6 +160,19 @@ const Dashboard = () => {
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-purple-400 transition">Rank Estimator</h3>
             <p className="text-sm text-gray-400 mb-4">Estimate your GATE rank using real verified historical marks-vs-rank data.</p>
             <span className="text-purple-500 text-sm font-medium">Estimate →</span>
+          </Link>
+
+          <Link to="/mistakes" className="block bg-gradient-to-br from-red-900/40 to-[#1A1D24] p-6 rounded-xl border border-red-800/50 hover:border-red-500 transition group relative overflow-hidden">
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-red-400 transition">Mistake Notebook</h3>
+            <p className="text-sm text-gray-400 mb-4">Your auto-generated record of repeated mistakes and actionable fixes.</p>
+            <span className="text-red-500 text-sm font-medium">Open Notebook →</span>
+          </Link>
+
+          <Link to="/adaptive-test" className="block bg-gradient-to-br from-teal-900/40 to-[#1A1D24] p-6 rounded-xl border border-teal-800/50 hover:border-teal-500 transition group relative overflow-hidden col-span-1 md:col-span-2 xl:col-span-1">
+            <div className="absolute top-0 right-0 bg-teal-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">AI COACH</div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-teal-400 transition">Adaptive Mock Test</h3>
+            <p className="text-sm text-gray-400 mb-4">Personalized tests generated from your weak topics and mistake history.</p>
+            <span className="text-teal-500 text-sm font-medium">Generate Test →</span>
           </Link>
         </div>
       </div>

@@ -17,6 +17,8 @@ import ForgotPassword from './pages/ForgotPassword';
 import ResetPassword from './pages/ResetPassword';
 import RankEstimator from './pages/RankEstimator';
 import GateDatasetManager from './pages/admin/GateDatasetManager';
+import MistakeNotebook from './pages/MistakeNotebook';
+import AdaptiveMockTest from './pages/AdaptiveMockTest';
 
 // Simple Protected Route wrapper
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -71,6 +73,16 @@ function App() {
         <Route path="/revision" element={
           <ProtectedRoute>
             <SmartRevision />
+          </ProtectedRoute>
+        } />
+        <Route path="/mistakes" element={
+          <ProtectedRoute>
+            <MistakeNotebook />
+          </ProtectedRoute>
+        } />
+        <Route path="/adaptive-test" element={
+          <ProtectedRoute>
+            <AdaptiveMockTest />
           </ProtectedRoute>
         } />
         <Route path="/rank-estimator" element={

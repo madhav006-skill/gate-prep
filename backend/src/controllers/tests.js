@@ -2,6 +2,77 @@ const MockTest = require('../models/MockTest');
 const TestAttempt = require('../models/TestAttempt');
 const Question = require('../models/Question');
 const RevisionQuestion = require('../models/RevisionQuestion');
+const Mistake = require('../models/Mistake');
+
+const logMistake = async (userId, attemptId, question, ans, reason, source) => {
+  try {
+    let category = 'Concept Gap';
+    if (reason === 'Wrong Answer') {
+      if (question.difficulty === 'easy') category = 'Silly Mistake';
+      else if (question.type === 'NAT') category = 'Calculation Error';
+    } else if (reason === 'Slow but Correct') {
+      category = 'Time Pressure';
+    } else if (reason === 'Skipped Easy') {
+      category = 'Skipped Easy';
+    } else if (reason === 'Marked for Review') {
+      category = 'Marked for Review';
+    }
+
+    const priority = (reason === 'Wrong Answer' || reason === 'Skipped Easy') ? 'High' : 'Medium';
+    const marksLost = ans.marksAwarded < 0 ? Math.abs(ans.marksAwarded) + question.marks : question.marks; 
+    
+    let fixAction = 'Review this mistake and identify the root cause.';
+    switch (category) {
+      case 'Concept Gap': fixAction = "Revise core concept of this topic and solve 10 PYQs."; break;
+      case 'Silly Mistake': fixAction = "Review solution steps slowly and identify the careless step."; break;
+      case 'Calculation Error': fixAction = "Practice 5 numerical questions and verify units/signs after solving."; break;
+      case 'Time Pressure': fixAction = "Attempt a 15-minute speed drill for this topic."; break;
+      case 'Skipped Easy': fixAction = "Practice easy questions from this topic and improve question selection."; break;
+      case 'Marked for Review': fixAction = "Revisit this question and confirm the concept."; break;
+    }
+
+    const historyEntry = {
+      attemptId,
+      questionId: question._id,
+      userAnswer: ans.answer,
+      wasCorrect: ans.isCorrect,
+      timeSpent: ans.timeSpent || 0,
+      marksLost: (reason === 'Slow but Correct' || (reason === 'Marked for Review' && ans.isCorrect)) ? 0 : marksLost,
+      source,
+      detectedCategory: category
+    };
+
+    let mistake = await Mistake.findOne({ user: userId, question: question._id });
+    
+    if (mistake) {
+      mistake.timesRepeated += 1;
+      mistake.lastOccurredAt = Date.now();
+      mistake.status = 'Open';
+      if (mistake.priority !== 'High') mistake.priority = priority;
+      mistake.marksLost += historyEntry.marksLost;
+      mistake.history.push(historyEntry);
+      await mistake.save();
+    } else {
+      await Mistake.create({
+        user: userId,
+        question: question._id,
+        subject: question.subject || 'General',
+        topic: question.topic || 'General',
+        questionType: question.type,
+        detectedCategory: category,
+        priority,
+        status: 'Open',
+        timesRepeated: 1,
+        marksLost: historyEntry.marksLost,
+        fixAction,
+        source,
+        history: [historyEntry]
+      });
+    }
+  } catch (err) {
+    console.error('Error logging mistake:', err);
+  }
+};
 
 // @desc    Get all tests
 // @route   GET /api/tests
@@ -220,6 +291,8 @@ exports.submitTest = async (req, res, next) => {
             },
             { upsert: true }
           ).catch(() => {});
+          
+          await logMistake(req.user.id, attempt._id, question, ans, 'Wrong Answer', 'mock_test');
         } else if (isCorrect && ans.timeSpent > 180) {
           // Slow but correct — only add if not already flagged as Wrong
           await RevisionQuestion.findOneAndUpdate(
@@ -239,6 +312,8 @@ exports.submitTest = async (req, res, next) => {
             },
             { upsert: true }
           ).catch(() => {});
+          
+          await logMistake(req.user.id, attempt._id, question, ans, 'Slow but Correct', 'mock_test');
         }
         // ─────────────────────────────────────────────────────────────────
       } else {
@@ -262,6 +337,8 @@ exports.submitTest = async (req, res, next) => {
             },
             { upsert: true }
           ).catch(() => {});
+          
+          await logMistake(req.user.id, attempt._id, question, ans, 'Marked for Review', 'mock_test');
         }
 
         // Skipped Easy
@@ -283,6 +360,8 @@ exports.submitTest = async (req, res, next) => {
             },
             { upsert: true }
           ).catch(() => {});
+          
+          await logMistake(req.user.id, attempt._id, question, ans, 'Skipped Easy', 'mock_test');
         }
       }
     }
@@ -296,6 +375,11 @@ exports.submitTest = async (req, res, next) => {
           { user: req.user.id, subject, topic, status: { $ne: 'Completed' } },
           { $set: { priority: 'High', reason: 'Repeated Topic Weakness', dueDate: new Date(), status: 'Due' } }
         );
+        // Upgrade Mistake priorities for repeated topic weakness
+        await Mistake.updateMany(
+          { user: req.user.id, subject, topic, status: 'Open' },
+          { $set: { priority: 'High' } }
+        );
       }
     }
 
@@ -304,6 +388,32 @@ exports.submitTest = async (req, res, next) => {
     attempt.status = 'Submitted';
     attempt.endTime = new Date();
     attempt.timeTaken = Math.round(timeTaken);
+
+    // Adaptive Insights Calculation
+    const testDoc = await MockTest.findById(attempt.test);
+    if (testDoc && testDoc.isAdaptive) {
+      let marksRecovered = 0;
+      let weakTopicsImproved = [];
+      let speedImprovedCount = 0;
+
+      for (let ans of attempt.answers) {
+        if (ans.isCorrect) {
+          marksRecovered += ans.marksAwarded;
+          const qTopic = ans.question ? (await Question.findById(ans.question)).topic : null;
+          if (qTopic && testDoc.topicDistribution && testDoc.topicDistribution.get(qTopic)) {
+            if (!weakTopicsImproved.includes(qTopic)) weakTopicsImproved.push(qTopic);
+          }
+          if (ans.timeSpent > 0 && ans.timeSpent <= 120) speedImprovedCount++;
+        }
+      }
+
+      attempt.adaptiveInsights = {
+        marksRecovered,
+        weakTopicsImproved,
+        speedImprovedCount,
+        message: `You recovered ${marksRecovered} marks and showed improvement in ${weakTopicsImproved.length} targeted topics.`
+      };
+    }
 
     await attempt.save();
 

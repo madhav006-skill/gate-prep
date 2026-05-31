@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useExamStore } from '../store/examStore';
-import { CheckCircle, XCircle, Clock, Award, Target, BookOpen } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Award, Target, BookOpen, Brain, TrendingUp } from 'lucide-react';
 import api from '../api/client';
 
 const ResultLayout = () => {
@@ -75,6 +75,57 @@ const ResultLayout = () => {
             <p className="text-3xl font-bold text-white mt-1">{formatTime(result.timeTaken)}</p>
           </div>
         </div>
+
+        {/* Adaptive Insights Panel */}
+        {result.test.isAdaptive && result.adaptiveInsights && (
+          <div className="bg-gradient-to-r from-teal-900/40 to-[#1A1D24] rounded-xl border border-teal-500/50 p-6 shadow-xl mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 bg-teal-600 text-white text-[10px] font-bold px-3 py-1 rounded-bl-lg">ADAPTIVE INSIGHTS</div>
+            <h2 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+              <Brain className="text-teal-400" size={24} /> AI Analysis
+            </h2>
+            <p className="text-teal-100 mb-6 bg-teal-900/30 p-3 rounded-lg border border-teal-800/50">
+              {result.adaptiveInsights.message}
+            </p>
+            
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="bg-[#0F1117] border border-gray-800 p-4 rounded-xl flex items-center gap-4">
+                <div className="bg-emerald-900/30 p-3 rounded-lg">
+                  <TrendingUp className="text-emerald-500" size={20} />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Marks Recovered</span>
+                  <span className="text-lg font-bold text-emerald-400">+{result.adaptiveInsights.marksRecovered}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#0F1117] border border-gray-800 p-4 rounded-xl flex items-center gap-4">
+                <div className="bg-blue-900/30 p-3 rounded-lg">
+                  <Target className="text-blue-500" size={20} />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Topics Improved</span>
+                  <span className="text-lg font-bold text-blue-400">{result.adaptiveInsights.weakTopicsImproved.length}</span>
+                </div>
+              </div>
+
+              <div className="bg-[#0F1117] border border-gray-800 p-4 rounded-xl flex items-center gap-4">
+                <div className="bg-yellow-900/30 p-3 rounded-lg">
+                  <Clock className="text-yellow-500" size={20} />
+                </div>
+                <div>
+                  <span className="text-xs text-gray-500 block mb-1">Speed Improved</span>
+                  <span className="text-lg font-bold text-yellow-400">{result.adaptiveInsights.speedImprovedCount} Qs</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 text-right">
+              <Link to="/adaptive-test" className="text-sm font-bold text-teal-400 hover:text-teal-300 flex items-center justify-end gap-1">
+                Take Next Adaptive Test &rarr;
+              </Link>
+            </div>
+          </div>
+        )}
 
         {/* Detailed Analysis Section */}
         <div className="bg-[#1A1D24] rounded-xl border border-gray-700 p-6 shadow-xl">

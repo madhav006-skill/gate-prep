@@ -17,7 +17,7 @@ const MockTestSchema = new mongoose.Schema({
   },
   type: {
     type: String,
-    enum: ['Full Mock', 'Topic-wise', 'Subject-wise PYQ', 'Year-wise PYQ', 'Daily Practice'],
+    enum: ['Full Mock', 'Topic-wise', 'Subject-wise PYQ', 'Year-wise PYQ', 'Daily Practice', 'Adaptive Mock'],
     required: true
   },
   duration: {
@@ -39,6 +39,32 @@ const MockTestSchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  isAdaptive: {
+    type: Boolean,
+    default: false
+  },
+  generatedForUser: {
+    type: mongoose.Schema.ObjectId,
+    ref: 'User'
+  },
+  adaptiveReason: {
+    type: String
+  },
+  adaptiveMode: {
+    type: String
+  },
+  topicDistribution: {
+    type: Map,
+    of: Number
+  },
+  difficultyDistribution: {
+    type: Map,
+    of: Number
+  },
+  typeDistribution: {
+    type: Map,
+    of: Number
   }
 }, {
   timestamps: true
