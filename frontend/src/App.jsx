@@ -19,6 +19,7 @@ import RankEstimator from './pages/RankEstimator';
 import GateDatasetManager from './pages/admin/GateDatasetManager';
 import MistakeNotebook from './pages/MistakeNotebook';
 import AdaptiveMockTest from './pages/AdaptiveMockTest';
+import Socho from './pages/Socho';
 
 // Simple Protected Route wrapper
 const ProtectedRoute = ({ children, adminOnly }) => {
@@ -83,6 +84,11 @@ function App() {
         <Route path="/adaptive-test" element={
           <ProtectedRoute>
             <AdaptiveMockTest />
+          </ProtectedRoute>
+        } />
+        <Route path="/socho" element={
+          <ProtectedRoute>
+            <Socho />
           </ProtectedRoute>
         } />
         <Route path="/rank-estimator" element={

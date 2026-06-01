@@ -127,6 +127,23 @@ const ResultLayout = () => {
           </div>
         )}
 
+        {/* Socho Mastery Banner */}
+        <div className="bg-gradient-to-r from-cyan-900/40 to-[#1A1D24] rounded-xl border border-cyan-500/50 p-6 shadow-xl mb-8 relative overflow-hidden flex flex-col sm:flex-row justify-between items-center">
+          <div>
+            <h2 className="text-xl font-bold text-white mb-2 flex items-center gap-2">
+              <Brain className="text-cyan-400" size={24} /> Socho Mastery Engine
+            </h2>
+            <p className="text-cyan-100 text-sm max-w-lg">
+              We've identified some of your correct answers that took too long, and some silly mistakes. Review them now to ensure true concept mastery.
+            </p>
+          </div>
+          <div className="mt-4 sm:mt-0">
+            <Link to="/socho" className="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
+              <Target size={18} /> Open Socho
+            </Link>
+          </div>
+        </div>
+
         {/* Detailed Analysis Section */}
         <div className="bg-[#1A1D24] rounded-xl border border-gray-700 p-6 shadow-xl">
           <h2 className="text-xl font-bold text-white mb-6 flex items-center">

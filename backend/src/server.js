@@ -61,6 +61,7 @@ const revision = require('./routes/revision');
 const rankEstimator = require('./routes/rankEstimator');
 const mistakes = require('./routes/mistakes');
 const adaptive = require('./routes/adaptive');
+const socho = require('./routes/socho');
 
 // Mount routers
 app.use('/api/auth', auth);
@@ -73,6 +74,7 @@ app.use('/api/revision', revision);
 app.use('/api/rank-estimator', rankEstimator);
 app.use('/api/mistakes', mistakes);
 app.use('/api/adaptive', adaptive);
+app.use('/api/socho', socho);
 
 // Error handler middleware
 app.use(errorHandler);

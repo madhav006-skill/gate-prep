@@ -168,11 +168,18 @@ const Dashboard = () => {
             <span className="text-red-500 text-sm font-medium">Open Notebook →</span>
           </Link>
 
-          <Link to="/adaptive-test" className="block bg-gradient-to-br from-teal-900/40 to-[#1A1D24] p-6 rounded-xl border border-teal-800/50 hover:border-teal-500 transition group relative overflow-hidden col-span-1 md:col-span-2 xl:col-span-1">
+          <Link to="/adaptive-test" className="block bg-gradient-to-br from-teal-900/40 to-[#1A1D24] p-6 rounded-xl border border-teal-800/50 hover:border-teal-500 transition group relative overflow-hidden">
             <div className="absolute top-0 right-0 bg-teal-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">AI COACH</div>
             <h3 className="text-lg font-bold text-white mb-2 group-hover:text-teal-400 transition">Adaptive Mock Test</h3>
             <p className="text-sm text-gray-400 mb-4">Personalized tests generated from your weak topics and mistake history.</p>
             <span className="text-teal-500 text-sm font-medium">Generate Test →</span>
+          </Link>
+
+          <Link to="/socho" className="block bg-gradient-to-br from-cyan-900/40 to-[#1A1D24] p-6 rounded-xl border border-cyan-800/50 hover:border-cyan-500 transition group relative overflow-hidden col-span-1 md:col-span-2 xl:col-span-1">
+            <div className="absolute top-0 right-0 bg-cyan-600 text-white text-[10px] font-bold px-2 py-1 rounded-bl-lg">MASTERY</div>
+            <h3 className="text-lg font-bold text-white mb-2 group-hover:text-cyan-400 transition">Socho</h3>
+            <p className="text-sm text-gray-400 mb-4">Check whether your correct answers were truly understood.</p>
+            <span className="text-cyan-500 text-sm font-medium">Open Socho →</span>
           </Link>
         </div>
       </div>
