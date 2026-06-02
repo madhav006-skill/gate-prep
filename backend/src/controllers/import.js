@@ -13,8 +13,10 @@ exports.uploadPdf = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Please upload a PDF file' });
     }
 
+    // Read file into memory buffer to avoid Axios stream/Content-Length bugs
+    const fileBuffer = fs.readFileSync(req.file.path);
     const formData = new FormData();
-    formData.append('file', fs.createReadStream(req.file.path), {
+    formData.append('file', fileBuffer, {
       filename: req.file.originalname,
       contentType: 'application/pdf',
     });
