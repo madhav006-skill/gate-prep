@@ -40,7 +40,15 @@ exports.uploadPdf = async (req, res, next) => {
       fs.unlinkSync(req.file.path);
     }
     console.error('Error proxying to Python API:', error.message);
-    res.status(500).json({ success: false, error: 'Failed to process PDF upload' });
+    if (error.response) {
+      console.error('Python API Data:', error.response.data);
+    }
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to process PDF upload', 
+      details: error.message,
+      pythonData: error.response ? error.response.data : null
+    });
   }
 };
 
