@@ -10,6 +10,11 @@ from typing import Dict
 
 app = FastAPI(title="PDF to Question Import System OCR API")
 
+@app.head("/")
+@app.get("/")
+async def root():
+    return {"status": "ok", "message": "OCR API is running"}
+
 ALLOWED_ORIGINS = [
     "https://gate-prep-backend.onrender.com",
     "https://frontend-murex-two-47.vercel.app",
