@@ -106,12 +106,13 @@ exports.saveImportedQuestions = async (req, res, next) => {
       const textContent = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
       // ── FAULT 1: Completely blank/empty questions ──
-      if (!textContent && !content) {
+      const hasImage = !!q.base64Image || !!q.imageUrl;
+      if (!textContent && !content && !hasImage) {
         rejectedBlank++;
         console.log(`[Import] Rejected BLANK question`);
         continue;
       }
-      if (textContent === '' || html === '<p></p>' || html === '<p> </p>') {
+      if ((textContent === '' || html === '<p></p>' || html === '<p> </p>') && !hasImage) {
         rejectedBlank++;
         console.log(`[Import] Rejected EMPTY-TAG question`);
         continue;
