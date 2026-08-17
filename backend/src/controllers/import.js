@@ -89,53 +89,98 @@ exports.saveImportedQuestions = async (req, res, next) => {
     console.log(`[Import] Received ${questions.length} raw questions for "${title}"`);
 
     // ═══════════════════════════════════════════════════════════════════════
-    // STEP 0: CLEAN & DEDUPLICATE before doing anything expensive
+    // STEP 0: SMART FAULT DETECTION — remove bad questions from ANY position
+    // Instead of blindly cutting from end, we score each question and remove
+    // the ones that are clearly OCR artifacts/faults.
     // ═══════════════════════════════════════════════════════════════════════
     const seenHtml = new Set();
     const cleanedQuestions = [];
     let rejectedBlank = 0;
     let rejectedDuplicate = 0;
+    let rejectedFault = 0;
 
     for (const q of questions) {
-      // Reject blank/empty questions
       const html = (q.questionHtml || '').trim();
       const content = (q.content || '').trim();
-      const textContent = html.replace(/<[^>]*>/g, '').trim(); // strip HTML tags
+      // Strip ALL HTML tags to get pure text
+      const textContent = html.replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
+      // ── FAULT 1: Completely blank/empty questions ──
       if (!textContent && !content) {
         rejectedBlank++;
+        console.log(`[Import] Rejected BLANK question`);
         continue;
       }
       if (textContent === '' || html === '<p></p>' || html === '<p> </p>') {
         rejectedBlank++;
+        console.log(`[Import] Rejected EMPTY-TAG question`);
         continue;
       }
 
-      // Reject duplicates (by normalized questionHtml)
+      // ── FAULT 2: Exact duplicate (same questionHtml) ──
       const normalizedKey = (html || content).replace(/\s+/g, ' ').trim().toLowerCase();
       if (seenHtml.has(normalizedKey)) {
         rejectedDuplicate++;
+        console.log(`[Import] Rejected DUPLICATE: ${textContent.substring(0, 60)}...`);
         continue;
       }
       seenHtml.add(normalizedKey);
 
+      // ── FAULT 3: Too short — OCR fragments (less than 15 chars of real text) ──
+      // A real GATE question always has at least ~20 characters of meaningful text.
+      if (textContent.length < 15 && !q.base64Image) {
+        rejectedFault++;
+        console.log(`[Import] Rejected TOO-SHORT (${textContent.length} chars): "${textContent}"`);
+        continue;
+      }
+
+      // ── FAULT 4: Header/instruction lines that OCR mistook as questions ──
+      // Things like "Q.1 to Q.5 carry one mark each", "General Aptitude", etc.
+      const headerPatterns = [
+        /^Q\.\s*\d+\s*(to|–|-)\s*Q\.\s*\d+/i,
+        /carry\s+(one|two|1|2)\s+mark/i,
+        /general\s+aptitude/i,
+        /computer\s+science/i,
+        /organizing\s+institute/i,
+        /page\s*\d+\s*of\s*\d+/i,
+        /^\s*CS\s*$/i,
+        /^\s*GA\s*$/i,
+      ];
+      const isHeader = headerPatterns.some(p => p.test(textContent));
+      if (isHeader) {
+        rejectedFault++;
+        console.log(`[Import] Rejected HEADER/INSTRUCTION: "${textContent.substring(0, 60)}"`);
+        continue;
+      }
+
+      // ── FAULT 5: Option-only artifacts (only has "(A) (B) (C) (D)" with no question body) ──
+      const withoutOptions = textContent.replace(/\([A-Da-d]\)\s*/g, '').trim();
+      if (withoutOptions.length < 10 && !q.base64Image) {
+        rejectedFault++;
+        console.log(`[Import] Rejected OPTION-ONLY artifact: "${textContent.substring(0, 60)}"`);
+        continue;
+      }
+
       cleanedQuestions.push(q);
     }
 
-    console.log(`[Import] Rejected ${rejectedBlank} blank, ${rejectedDuplicate} duplicate. Clean: ${cleanedQuestions.length}`);
+    console.log(`[Import] Filtering summary: ${rejectedBlank} blank, ${rejectedDuplicate} duplicate, ${rejectedFault} faulty OCR artifacts`);
+    console.log(`[Import] Clean questions remaining: ${cleanedQuestions.length} (target: 65)`);
 
-    // ═══════════════════════════════════════════════════════════════════════
-    // STEP 0.5: CAP AT 65 QUESTIONS (GATE standard)
-    // ═══════════════════════════════════════════════════════════════════════
-    const GATE_MAX_QUESTIONS = 65;
-    const cappedQuestions = cleanedQuestions.slice(0, GATE_MAX_QUESTIONS);
-    if (cleanedQuestions.length > GATE_MAX_QUESTIONS) {
-      console.log(`[Import] Capped from ${cleanedQuestions.length} to ${GATE_MAX_QUESTIONS} questions`);
+    if (cleanedQuestions.length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid questions found after filtering blanks, duplicates, and faults' });
     }
 
-    if (cappedQuestions.length === 0) {
-      return res.status(400).json({ success: false, error: 'No valid questions found after filtering blanks and duplicates' });
+    // NOTE: We do NOT blindly cap at 65. If OCR extracted 67 valid questions,
+    // all 67 are genuinely different questions. The admin can manually review
+    // and exclude extras in the ImportPreview screen before saving.
+    // We only log a warning if count != 65.
+    const GATE_EXPECTED = 65;
+    if (cleanedQuestions.length !== GATE_EXPECTED) {
+      console.log(`[Import] ⚠️ Expected ${GATE_EXPECTED} questions but got ${cleanedQuestions.length} after fault removal`);
     }
+
+    const cappedQuestions = cleanedQuestions; // Keep ALL valid questions
 
     if (importJobId) {
       global.saveProgressStore[importJobId] = { completed: 0, total: cappedQuestions.length, percentage: 0 };
