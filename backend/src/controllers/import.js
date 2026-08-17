@@ -86,8 +86,59 @@ exports.saveImportedQuestions = async (req, res, next) => {
       return res.status(400).json({ success: false, error: 'Invalid questions array' });
     }
 
+    console.log(`[Import] Received ${questions.length} raw questions for "${title}"`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 0: CLEAN & DEDUPLICATE before doing anything expensive
+    // ═══════════════════════════════════════════════════════════════════════
+    const seenHtml = new Set();
+    const cleanedQuestions = [];
+    let rejectedBlank = 0;
+    let rejectedDuplicate = 0;
+
+    for (const q of questions) {
+      // Reject blank/empty questions
+      const html = (q.questionHtml || '').trim();
+      const content = (q.content || '').trim();
+      const textContent = html.replace(/<[^>]*>/g, '').trim(); // strip HTML tags
+
+      if (!textContent && !content) {
+        rejectedBlank++;
+        continue;
+      }
+      if (textContent === '' || html === '<p></p>' || html === '<p> </p>') {
+        rejectedBlank++;
+        continue;
+      }
+
+      // Reject duplicates (by normalized questionHtml)
+      const normalizedKey = (html || content).replace(/\s+/g, ' ').trim().toLowerCase();
+      if (seenHtml.has(normalizedKey)) {
+        rejectedDuplicate++;
+        continue;
+      }
+      seenHtml.add(normalizedKey);
+
+      cleanedQuestions.push(q);
+    }
+
+    console.log(`[Import] Rejected ${rejectedBlank} blank, ${rejectedDuplicate} duplicate. Clean: ${cleanedQuestions.length}`);
+
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 0.5: CAP AT 65 QUESTIONS (GATE standard)
+    // ═══════════════════════════════════════════════════════════════════════
+    const GATE_MAX_QUESTIONS = 65;
+    const cappedQuestions = cleanedQuestions.slice(0, GATE_MAX_QUESTIONS);
+    if (cleanedQuestions.length > GATE_MAX_QUESTIONS) {
+      console.log(`[Import] Capped from ${cleanedQuestions.length} to ${GATE_MAX_QUESTIONS} questions`);
+    }
+
+    if (cappedQuestions.length === 0) {
+      return res.status(400).json({ success: false, error: 'No valid questions found after filtering blanks and duplicates' });
+    }
+
     if (importJobId) {
-      global.saveProgressStore[importJobId] = { completed: 0, total: questions.length, percentage: 0 };
+      global.saveProgressStore[importJobId] = { completed: 0, total: cappedQuestions.length, percentage: 0 };
     }
 
     const { cloudinary } = require('../config/cloudinary');
@@ -95,8 +146,8 @@ exports.saveImportedQuestions = async (req, res, next) => {
     // --- AI Topic Classification ---
     let aiClassifications = [];
     try {
-      console.log('Sending questions to Gemini for deep topic classification...');
-      aiClassifications = await classifyQuestions(questions, subject || 'CS', (completed, total) => {
+      console.log('[Import] Sending questions to Gemini for deep topic classification...');
+      aiClassifications = await classifyQuestions(cappedQuestions, subject || 'CS', (completed, total) => {
         if (importJobId) {
           global.saveProgressStore[importJobId] = {
             completed,
@@ -105,14 +156,14 @@ exports.saveImportedQuestions = async (req, res, next) => {
           };
         }
       });
-      console.log(`Classification complete.`);
+      console.log(`[Import] Classification complete.`);
     } catch (e) {
-      console.error('Failed to classify with AI', e);
+      console.error('[Import] Failed to classify with AI', e);
     }
 
     // Process questions: if they have a base64Image, upload it to Cloudinary
     const processedQuestions = await Promise.all(
-      questions.map(async (q, idx) => {
+      cappedQuestions.map(async (q, idx) => {
         let uploadedImageUrl = null;
         if (q.base64Image) {
           try {
@@ -141,41 +192,46 @@ exports.saveImportedQuestions = async (req, res, next) => {
       })
     );
 
-    // Automatically create a Mock Test from these questions so students can attempt it!
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 1: IDEMPOTENT MOCK TEST — delete old test+questions on re-import
+    // ═══════════════════════════════════════════════════════════════════════
     const MockTest = require('../models/MockTest');
-    
     const testTitle = title || `Imported GATE Paper - ${new Date().toLocaleDateString()}`;
     
-    // ── IDEMPOTENCY: If a test with same title already exists, delete its old
-    //    questions and update it — prevents duplicate tests on re-import ────────
     const existingTest = await MockTest.findOne({ title: testTitle });
     if (existingTest) {
-      console.log(`[Import] Test "${testTitle}" already exists. Removing old questions and updating...`);
+      console.log(`[Import] Test "${testTitle}" already exists. Replacing entirely...`);
       const oldQIds = existingTest.questions.map(q => q.question);
       await Question.deleteMany({ _id: { $in: oldQIds } });
       await MockTest.findByIdAndDelete(existingTest._id);
       console.log(`[Import] Deleted ${oldQIds.length} old questions and stale test.`);
     }
-    // ─────────────────────────────────────────────────────────────────────────
 
-    // Insert approved questions into the DB
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 2: INSERT CLEAN QUESTIONS
+    // ═══════════════════════════════════════════════════════════════════════
     const savedQuestions = await Question.insertMany(processedQuestions);
 
-    // Calculate total marks
-    const totalMarks = savedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
+    // ═══════════════════════════════════════════════════════════════════════
+    // STEP 3: CREATE MOCK TEST — force 100 marks for GATE papers
+    // ═══════════════════════════════════════════════════════════════════════
+    const isGatePaper = (type === 'Year-wise PYQ' || type === 'Full Mock');
+    const totalMarks = isGatePaper ? 100 : savedQuestions.reduce((sum, q) => sum + (q.marks || 1), 0);
     
     const newTest = await MockTest.create({
       title: testTitle,
-      description: description || 'Automatically generated mock test from imported PDF questions.',
+      description: description || 'Official GATE Previous Year Question Paper.',
       subject: subject || savedQuestions[0]?.subject || 'CS',
       type: type || 'Full Mock',
-      duration: (type === 'Year-wise PYQ' || type === 'Full Mock') ? 180 : savedQuestions.length * 2,
+      duration: isGatePaper ? 180 : savedQuestions.length * 2,
       totalMarks,
       questions: savedQuestions.map((q, index) => ({
         question: q._id,
         order: index + 1
       }))
     });
+
+    console.log(`[Import] ✅ Created "${testTitle}" with ${savedQuestions.length} questions, ${totalMarks} marks`);
 
     res.status(201).json({
       success: true,
