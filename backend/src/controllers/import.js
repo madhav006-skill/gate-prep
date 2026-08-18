@@ -119,13 +119,18 @@ exports.saveImportedQuestions = async (req, res, next) => {
       }
 
       // ── FAULT 2: Exact duplicate (same questionHtml) ──
+      // If the question is purely image-based (empty text), we skip duplicate check 
+      // or we can hash the base64Image if we really want to deduplicate images.
+      // For now, if there's no text but there is an image, we don't treat it as a text duplicate.
       const normalizedKey = (html || content).replace(/\s+/g, ' ').trim().toLowerCase();
-      if (seenHtml.has(normalizedKey)) {
-        rejectedDuplicate++;
-        console.log(`[Import] Rejected DUPLICATE: ${textContent.substring(0, 60)}...`);
-        continue;
+      if (normalizedKey !== '') {
+        if (seenHtml.has(normalizedKey)) {
+          rejectedDuplicate++;
+          console.log(`[Import] Rejected DUPLICATE: ${textContent.substring(0, 60)}...`);
+          continue;
+        }
+        seenHtml.add(normalizedKey);
       }
-      seenHtml.add(normalizedKey);
 
       // ── FAULT 3: Too short — OCR fragments (less than 15 chars of real text) ──
       // A real GATE question always has at least ~20 characters of meaningful text.
