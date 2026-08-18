@@ -88,14 +88,6 @@ const ExamLayout = () => {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-[#0F1117]">
-        <div className="text-white text-xl animate-pulse">Loading Test Environment...</div>
-      </div>
-    );
-  }
-
   // Redirect to result when submitted
   useEffect(() => {
     if (isSubmitted) {
@@ -103,6 +95,14 @@ const ExamLayout = () => {
       navigate(`/result/${attemptId}`);
     }
   }, [isSubmitted, navigate]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#0F1117]">
+        <div className="text-white text-xl animate-pulse">Loading Test Environment...</div>
+      </div>
+    );
+  }
 
   if (isSubmitted) {
     return null;
